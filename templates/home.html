@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse - Home</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <!-- Simple placeholder home page -->
+</head>
+<body>
+  <main class="container">
+    <header class="brand">
+      <div class="logo">Pulse</div>
+      <p class="subtitle">Home</p>
+    </header>
+    <section class="card">
+      <h2>Welcome!</h2>
+      <!-- We'll probably want to make this the index page and
+        set up redirect to auth if the user is not logged in later -->
+      <p>Placholder homepage :)</p>
+      <p><a href="{{ url_for('auth') }}">Back to Auth</a></p>
+    </section>
+  </main>
+</body>
+</html>
+
+
