@@ -75,7 +75,6 @@ a:hover {
   margin-top: 8px;
 }
 
-/* Compact list rows with chevron */
 .list {
   margin: 0;
   padding: 0;
@@ -172,6 +171,7 @@ a:hover {
   border: 1px solid var(--border);
   border-radius: 10px;
   background: #0b1220;
+  margin-bottom: 10px;
 }
 
 .user-main {
@@ -193,6 +193,16 @@ a:hover {
   color: var(--fg);
 }
 
+.profile-pic {
+  width: 120px;
+  height: 120px;
+  border-radius: 9999px;
+  background: #1f2937;
+  display: block;
+  margin: 16px auto;
+  object-fit: cover;
+}
+
 .user-meta {
   display: flex;
   flex-direction: column;
@@ -207,6 +217,52 @@ a:hover {
   gap: 10px;
   width: 320px;
   max-width: 40vw;
+}
+
+.message-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  width: 320px;
+  max-width: 40vw;
+}
+
+.event-pic {
+  width: 100%;
+  border-radius: 12px;
+  margin-top: 12px;
+  object-fit: cover;
+}
+
+.event-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #0b1220;
+  margin-bottom: 10px;
+}
+
+.event-card h3 {
+  font-size: 2rem;
+  margin: 10px 0 6px;
+}
+
+.event-date-location {
+  color: var(--muted);
+  display: flex;
+  gap: 16px;
+  font-size: 0.95rem;
+}
+
+.event-date-location p {
+  margin: 0;
+}
+
+.event-description {
+  color: var(--muted);
+  margin: 10px 0 16px;
 }
 
 label {

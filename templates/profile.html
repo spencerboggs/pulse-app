@@ -15,9 +15,12 @@
     <section class="card">
       <h2 id="profile-name">Profile</h2>
       <p id="profile-sub">This is the Profile page.</p>
+      <img src="{{ url_for('static', filename='images/profile_placeholder.png') }}" alt="Profile Picture" class="profile-pic">
+      
       <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
     </section>
     <script>
+      /* Temporary script for viewing other users. Will need to implement actual pages for different users */
       (function() {
         const params = new URLSearchParams(window.location.search);
         const user = params.get('user');

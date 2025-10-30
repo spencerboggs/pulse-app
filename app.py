@@ -23,6 +23,10 @@ def create_app() -> Flask:
     @app.route("/events")
     def events():
         return render_template("events.html")
+    
+    @app.route("/concert-map")
+    def concert_map():
+        return render_template("concert_map.html")
 
     @app.route("/settings")
     def settings():
