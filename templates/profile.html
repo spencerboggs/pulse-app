@@ -1,44 +1,3 @@
-<<<<<<< HEAD
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pulse - Profile</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-</head>
-<body>
-  <main class="container">
-    <header class="brand">
-      <div class="logo">Pulse</div>
-      <p class="subtitle">Profile</p>
-    </header>
-    <section class="card">
-      <h2 id="profile-name">Profile</h2>
-      <p id="profile-sub">This is the Profile page.</p>
-      <img src="{{ url_for('static', filename='images/profile_placeholder.png') }}" alt="Profile Picture" class="profile-pic">
-      
-      <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
-    </section>
-    <script>
-      /* Temporary script for viewing other users. Will need to implement actual pages for different users */
-      (function() {
-        const params = new URLSearchParams(window.location.search);
-        const user = params.get('user');
-        if (user) {
-          const nameEl = document.getElementById('profile-name');
-          const subEl = document.getElementById('profile-sub');
-          nameEl.textContent = user;
-          subEl.textContent = 'Viewing profile for ' + user + '.';
-        }
-      })();
-    </script>
-  </main>
-</body>
-</html>
-
-
-=======
 <!doctype html>
 <html lang="en">
 <head>
@@ -55,9 +14,9 @@
     </header>
 
     <section class="card">
+      <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
       <h2 id="profile-name">Sammy Watkins</h2>
 
-      <!-- ✅ Just displays the image passed from Flask -->
       <img id="profile-picture" src="{{ img_url }}" alt="Profile Picture" class="profile-pic">
 
       <div class="profile-section">
@@ -69,6 +28,7 @@
           <p><span class="info-label">Favorite Album:</span> IGOR</p>
         </div>
       </div>
+      <!-- ================================================================== -->
 
       <p style="margin-top: 16px;">
         <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
@@ -76,7 +36,7 @@
     </section>
 
     <script>
-      // Optional: dynamically set name if "?user=" param is present
+      // Query param support for demo purposes
       (function() {
         const params = new URLSearchParams(window.location.search);
         const user = params.get('user');
@@ -86,4 +46,3 @@
   </main>
 </body>
 </html>
->>>>>>> e3c12d6 (changed, user profile,  matchmaking w/ matchmaking user profiles, added messaging users and a non functional message thread)

@@ -44,9 +44,9 @@
     <section class="card">
       <h2>{{ display_name }}</h2>
 
-      <!-- Displays the image URL passed from Flask -->
       <img src="{{ img_url }}" alt="Profile Picture" class="profile-pic">
 
+      <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
       <div class="profile-section">
         <h3>Music Taste</h3>
         <div class="music-info">
@@ -56,6 +56,7 @@
           <p><span class="info-label">Favorite Album:</span> —</p>
         </div>
       </div>
+      <!-- ================================================================== -->
 
       <p style="margin-top: 16px;">
         <a class="btn btn-ghost" href="{{ url_for('matchmaking') }}">Back to Matchmaking</a>

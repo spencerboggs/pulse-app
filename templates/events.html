@@ -16,11 +16,14 @@
       <h2>Explore Events and Concerts</h2>
       <button class="btn btn-primary w-full">Concert Map</button>
       <div class="list" style="margin-top: 8px;">
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
         <div class="event-card">
           <img src="{{ url_for('static', filename='images/event_placeholder.png') }}" alt="Event 1" class="event-pic">
           <h3>Event 1</h3>
-          <p>Date: X</p>
-          <p>Location: X</p>
+          <div class="event-date-location">
+            <p>Date: X</p>
+            <p>Location: X</p>
+          </div>
           <p class="event-description">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione architecto pariatur, modi est dolores ea eum vel maxime. Quos non dolorem est laboriosam adipisci totam at consequatur corrupti aperiam ab.</p>
           <a class="btn btn-primary w-full">View Details</a>
         </div>
@@ -37,15 +40,17 @@
         <div class="event-card">
           <img src="{{ url_for('static', filename='images/event_placeholder.png') }}" alt="Event 3" class="event-pic">
           <h3>Event 3</h3>
-          <p>Date: X</p>
-          <p>Location: X</p>
+          <div class="event-date-location">
+            <p>Date: X</p>
+            <p>Location: X</p>
+          </div>
           <p class="event-description">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione architecto pariatur, modi est dolores ea eum vel maxime. Quos non dolorem est laboriosam adipisci totam at consequatur corrupti aperiam ab.</p>
           <a class="btn btn-primary w-full">View Details</a>
         </div>
+        <!-- ================================================================== -->
+      </div>
       <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
     </section>
   </main>
 </body>
 </html>
-
-
