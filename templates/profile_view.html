@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse - {{ display_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+  <style>
+    .profile-pic {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #a1ffce;
+      display: block;
+      margin: 15px auto;
+    }
+    .profile-section {
+      margin-top: 20px;
+      background-color: #1c1c1c;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .music-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 20px;
+      color: #ddd;
+      margin-top: 10px;
+    } 
+    .music-info p { margin: 0; font-size: 0.95rem; }
+    .info-label { font-weight: bold; color: #a1ffce; }
+    @media (max-width: 600px) { .music-info { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="brand">
+      <div class="logo">Pulse</div>
+      <p class="subtitle">Profile</p>
+    </header>
+
+    <section class="card">
+      <h2>{{ display_name }}</h2>
+
+      <!-- Displays the image URL passed from Flask -->
+      <img src="{{ img_url }}" alt="Profile Picture" class="profile-pic">
+
+      <div class="profile-section">
+        <h3>Music Taste</h3>
+        <div class="music-info">
+          <p><span class="info-label">Favorite Artist:</span> —</p>
+          <p><span class="info-label">Favorite Genre:</span> —</p>
+          <p><span class="info-label">Most Listened To Song:</span> —</p>
+          <p><span class="info-label">Favorite Album:</span> —</p>
+        </div>
+      </div>
+
+      <p style="margin-top: 16px;">
+        <a class="btn btn-ghost" href="{{ url_for('matchmaking') }}">Back to Matchmaking</a>
+      </p>
+    </section>
+  </main>
+</body>
+</html>

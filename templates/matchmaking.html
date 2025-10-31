@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!doctype html>
 <html lang="en">
 <head>
@@ -283,3 +284,119 @@
 </html>
 
 
+=======
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse - Matchmaking</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <main class="container">
+    <header class="brand">
+      <div class="logo">Pulse</div>
+      <p class="subtitle">Matchmaking</p>
+    </header>
+    <section class="card">
+      <h2>Suggested Accounts</h2>
+      <div class="list" style="margin-top: 8px;">
+        <div class="user-card">
+          <div class="user-main">
+            <div class="avatar">P1</div>
+            <div class="user-meta">
+              <span class="user-name">Lena Ortiz</span>
+              <span class="user-handle">@lenaverse</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <a class="btn btn-ghost w-full">Friend</a>
+            <a class="btn btn-primary w-full" href="{{ url_for('user_profile', username='Lena Ortiz') }}">View</a>
+          </div>
+        </div>
+        <div class="user-card">
+          <div class="user-main">
+            <div class="avatar">P2</div>
+            <div class="user-meta">
+              <span class="user-name">Caleb Tran</span>
+              <span class="user-handle">@c0debycaleb</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <a class="btn btn-ghost w-full">Friend</a>
+            <a class="btn btn-primary w-full" href="{{ url_for('user_profile', username='Caleb Tran') }}">View</a>
+          </div>
+        </div>
+        <div class="user-card">
+          <div class="user-main">
+            <div class="avatar">P3</div>
+            <div class="user-meta">
+              <span class="user-name">Maya Chen</span>
+              <span class="user-handle">@itsmayac</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <a class="btn btn-ghost w-full">Friend</a>
+            <a class="btn btn-primary w-full" href="{{ url_for('user_profile', username='Maya Chen') }}">View</a>
+          </div>
+        </div>
+        <div class="user-card">
+          <div class="user-main">
+            <div class="avatar">P4</div>
+            <div class="user-meta">
+              <span class="user-name">Dante Rivera</span>
+              <span class="user-handle">@dantethebuilder</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <a class="btn btn-ghost w-full">Friend</a>
+            <a class="btn btn-primary w-full" href="{{ url_for('user_profile', username='Dante Rivera') }}">View</a>
+          </div>
+        </div>
+        <div class="user-card">
+          <div class="user-main">
+            <div class="avatar">P5</div>
+            <div class="user-meta">
+              <span class="user-name">Eli Navarro</span>
+              <span class="user-handle">@elinavdev</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <a class="btn btn-ghost w-full">Friend</a>
+            <a class="btn btn-primary w-full" href="{{ url_for('user_profile', username='Eli Navarro') }}">View</a>
+          </div>
+        </div>
+        <div class="user-card">
+          <div class="user-main">
+            <div class="avatar">P6</div>
+            <div class="user-meta">
+              <span class="user-name">Zoey Kim</span>
+              <span class="user-handle">@zoeyk.dev</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <a class="btn btn-ghost w-full">Friend</a>
+            <a class="btn btn-primary w-full" href="{{ url_for('user_profile', username='Zoey Kim') }}">View</a>
+          </div>
+        </div>
+        <div class="user-card">
+          <div class="user-main">
+            <div class="avatar">P7</div>
+            <div class="user-meta">
+              <span class="user-name">Nora Patel</span>
+              <span class="user-handle">@norapixel</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <a class="btn btn-ghost w-full">Friend</a>
+            <a class="btn btn-primary w-full" href="{{ url_for('user_profile', username='Nora Patel') }}">View</a>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+    </section>
+  </main>
+</body>
+</html>
+>>>>>>> e3c12d6 (changed, user profile,  matchmaking w/ matchmaking user profiles, added messaging users and a non functional message thread)

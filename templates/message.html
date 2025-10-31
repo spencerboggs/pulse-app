@@ -1,270 +1,168 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pulse - Message</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    /* lightweight modal + chat styles in case base stylesheet doesn't include them */
+    dialog#chatModal {
+      border: none;
+      border-radius: 12px;
+      padding: 0;
+      max-width: 520px;
+      width: 92%;
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    }
+    .chat-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid #e5e7eb;
+    }
+    .chat-title { font-weight: 600; }
+    .chat-body { padding: 12px 16px; background:#fafafa; }
+    .bubble { max-width: 85%; padding: 10px 12px; margin: 6px 0; border-radius: 12px; line-height: 1.35; }
+    .from-me { margin-left: auto; background: #2563eb; color: white; border-bottom-right-radius: 4px; }
+    .from-them { margin-right: auto; background: white; border: 1px solid #e5e7eb; border-bottom-left-radius: 4px; }
+    .chat-footer { display:flex; gap:8px; padding: 12px 16px; border-top: 1px solid #e5e7eb; }
+    .chat-footer input { flex:1; padding: 10px 12px; border:1px solid #e5e7eb; border-radius: 10px; }
+    .btn { cursor: pointer; }
+    .btn-close { background: transparent; border: none; font-size: 20px; line-height: 1; cursor: pointer; }
+  </style>
 </head>
-
 <body>
   <main class="container">
     <header class="brand">
       <div class="logo">Pulse</div>
       <p class="subtitle">Message</p>
     </header>
+
     <section class="card">
       <h2>Message</h2>
+
       <div class="list" style="margin-top: 8px;">
+        <!-- 5 users with random names & usernames -->
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">P1</div>
+            <div class="avatar">AJ</div>
             <div class="user-meta">
-              <span class="user-name">Person 1</span>
-              <span class="user-handle">@person1</span>
+              <span class="user-name">Ava Johnson</span>
+              <span class="user-handle">@avajams</span>
             </div>
           </div>
           <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
+            <a class="btn btn-primary w-full" data-username="@avajams" data-name="Ava Johnson">Message</a>
           </div>
         </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P2</div>
-            <div class="user-meta">
-              <span class="user-name">Person 2</span>
-              <span class="user-handle">@person2</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P3</div>
-            <div class="user-meta">
-              <span class="user-name">Person 3</span>
-              <span class="user-handle">@person3</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P4</div>
-            <div class="user-meta">
-              <span class="user-name">Person 4</span>
-              <span class="user-handle">@person4</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P5</div>
-            <div class="user-meta">
-              <span class="user-name">Person 5</span>
-              <span class="user-handle">@person5</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P6</div>
-            <div class="user-meta">
-              <span class="user-name">Person 6</span>
-              <span class="user-handle">@person6</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P7</div>
-            <div class="user-meta">
-              <span class="user-name">Person 7</span>
-              <span class="user-handle">@person7</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P8</div>
-            <div class="user-meta">
-              <span class="user-name">Person 8</span>
-              <span class="user-handle">@person8</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P9</div>
-            <div class="user-meta">
-              <span class="user-name">Person 9</span>
-              <span class="user-handle">@person9</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P10</div>
-            <div class="user-meta">
-              <span class="user-name">Person 10</span>
-              <span class="user-handle">@person10</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-      </div>
-      <div class="list" style="margin-top: 8px;">
-        <h2>Suggested</h2>
 
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">P11</div>
+            <div class="avatar">MB</div>
             <div class="user-meta">
-              <span class="user-name">Person 11</span>
-              <span class="user-handle">@person11</span>
+              <span class="user-name">Miles Brown</span>
+              <span class="user-handle">@milesbeats</span>
             </div>
           </div>
           <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
+            <a class="btn btn-primary w-full" data-username="@milesbeats" data-name="Miles Brown">Message</a>
           </div>
         </div>
+
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">P12</div>
+            <div class="avatar">RL</div>
             <div class="user-meta">
-              <span class="user-name">Person 12</span>
-              <span class="user-handle">@person12</span>
+              <span class="user-name">Riley Lopez</span>
+              <span class="user-handle">@riley.lo</span>
             </div>
           </div>
           <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
+            <a class="btn btn-primary w-full" data-username="@riley.lo" data-name="Riley Lopez">Message</a>
           </div>
         </div>
+
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">P13</div>
+            <div class="avatar">TK</div>
             <div class="user-meta">
-              <span class="user-name">Person 13</span>
-              <span class="user-handle">@person13</span>
+              <span class="user-name">Theo Kim</span>
+              <span class="user-handle">@theok</span>
             </div>
           </div>
           <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
+            <a class="btn btn-primary w-full" data-username="@theok" data-name="Theo Kim">Message</a>
           </div>
         </div>
+
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">P14</div>
+            <div class="avatar">EC</div>
             <div class="user-meta">
-              <span class="user-name">Person 14</span>
-              <span class="user-handle">@person14</span>
+              <span class="user-name">Emma Carter</span>
+              <span class="user-handle">@emcart</span>
             </div>
           </div>
           <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P15</div>
-            <div class="user-meta">
-              <span class="user-name">Person 15</span>
-              <span class="user-handle">@person15</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P16</div>
-            <div class="user-meta">
-              <span class="user-name">Person 16</span>
-              <span class="user-handle">@person16</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P17</div>
-            <div class="user-meta">
-              <span class="user-name">Person 17</span>
-              <span class="user-handle">@person17</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P18</div>
-            <div class="user-meta">
-              <span class="user-name">Person 18</span>
-              <span class="user-handle">@person18</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P19</div>
-            <div class="user-meta">
-              <span class="user-name">Person 19</span>
-              <span class="user-handle">@person19</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
-          </div>
-        </div>
-        <div class="user-card">
-          <div class="user-main">
-            <div class="avatar">P20</div>
-            <div class="user-meta">
-              <span class="user-name">Person 20</span>
-              <span class="user-handle">@person20</span>
-            </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full">Message</a>
+            <a class="btn btn-primary w-full" data-username="@emcart" data-name="Emma Carter">Message</a>
           </div>
         </div>
       </div>
+
       <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
     </section>
   </main>
-</body>
 
+  <!-- TEMP Messaging Block only for HW -->
+  <dialog id="chatModal">
+    <div class="chat-header">
+      <div class="chat-title">Chat with <span id="chatWith">Friend</span></div>
+      <button class="btn-close" aria-label="Close" id="closeChat">&times;</button>
+    </div>
+    <div class="chat-body">
+      <div class="bubble from-them">hey! what are you listening to lately?</div>
+      <div class="bubble from-me">been looping the new indie record from Aurora Lane great vocals.</div>
+      <div class="bubble from-them">nice. any standout track?</div>
+      <div class="bubble from-me">"Midnight Drive". the bass line is 🔥 and the hook sticks.</div>
+      <div class="bubble from-them">i'll queue it up. i’ve got a playlist for chill study vibes want it?</div>
+      <div class="bubble from-me">yes please! drop the link when you can.</div>
+    </div>
+    <div class="chat-footer">
+      <input type="text" placeholder="Type a message…" disabled>
+      <button class="btn btn-primary" disabled>Send</button>
+    </div>
+  </dialog>
+
+  <script>
+    const modal = document.getElementById('chatModal');
+    const chatWith = document.getElementById('chatWith');
+    const closeBtn = document.getElementById('closeChat');
+
+    document.querySelectorAll('.message-actions .btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.getAttribute('data-name') || 'Friend';
+        chatWith.textContent = name;
+        if (typeof modal.showModal === 'function') {
+          modal.showModal();
+        } else {
+          modal.setAttribute('open', 'open');
+        }
+      });
+    });
+
+    closeBtn.addEventListener('click', () => {
+      modal.close();
+    });
+
+    modal.addEventListener('click', (e) => {
+      const rect = modal.getBoundingClientRect();
+      const inDialog = (
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom
+      );
+      if (!inDialog) modal.close();
+    });
+  </script>
+</body>
 </html>
