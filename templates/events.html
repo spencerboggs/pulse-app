@@ -14,37 +14,42 @@
     </header>
     <section class="card">
       <h2>Explore Events and Concerts</h2>
-      <button class="btn btn-primary w-full">Concert Map</button>
+      <!-- Concert Map Button -->
+      <a class="btn btn-primary w-full" href="{{ url_for('concert_map') }}">Concert Map</a>
       <div class="list" style="margin-top: 8px;">
         <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
         <div class="event-card">
-          <img src="{{ url_for('static', filename='images/event_placeholder.png') }}" alt="Event 1" class="event-pic">
-          <h3>Event 1</h3>
+          <img src="{{ url_for('static', filename='images/placeholder_caser.png') }}" alt="Event 1" class="event-pic">
+          <h3>Daniel Ceasar Concert</h3>
           <div class="event-date-location">
-            <p>Date: X</p>
-            <p>Location: X</p>
+            <p>Date: 11/23/2025</p>
+            <p>Location: So-Fi Stadium</p>
           </div>
-          <p class="event-description">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione architecto pariatur, modi est dolores ea eum vel maxime. Quos non dolorem est laboriosam adipisci totam at consequatur corrupti aperiam ab.</p>
+          <p class="event-description">Come experience Daniel Ceasar's newest album LIVE at SoFi Stadium</p>
+          <button class="btn btn-primary w-full" onclick="openModal('Daniel Ceasar Concert', 'So-Fi Stadium', '11/23/2025')">
+            View Details
+          </button>
+        </div>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <div class="event-card">
+          <img src="{{ url_for('static', filename='images/placeholder_flawed.jpg') }}" alt="Event 2" class="event-pic">
+          <h3>Flawed Mangoes Debut Show</h3>
+          <div class="event-date-location">
+            <p>Date: 9/28/2025</p>
+            <p>Location: EchoPlex</p>
+          </div>
+          <p class="event-description">Up and comer artist Flawed Mangoes has his first live show at Echo Plex</p>
           <a class="btn btn-primary w-full">View Details</a>
         </div>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
         <div class="event-card">
-          <img src="{{ url_for('static', filename='images/event_placeholder.png') }}" alt="Event 2" class="event-pic">
-          <h3>Event 2</h3>
+          <img src="{{ url_for('static', filename='images/placeholder_benson.jpg') }}" alt="Event 3" class="event-pic">
+          <h3>Benson Boone World Tour</h3>
           <div class="event-date-location">
-            <p>Date: X</p>
-            <p>Location: X</p>
+            <p>Date: 12/25/2025</p>
+            <p>Location: Youtube Stadium</p>
           </div>
-          <p class="event-description">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione architecto pariatur, modi est dolores ea eum vel maxime. Quos non dolorem est laboriosam adipisci totam at consequatur corrupti aperiam ab.</p>
-          <a class="btn btn-primary w-full">View Details</a>
-        </div>
-        <div class="event-card">
-          <img src="{{ url_for('static', filename='images/event_placeholder.png') }}" alt="Event 3" class="event-pic">
-          <h3>Event 3</h3>
-          <div class="event-date-location">
-            <p>Date: X</p>
-            <p>Location: X</p>
-          </div>
-          <p class="event-description">Lorem ipsum dolor sit amet consectetur adipisicing elit. Ratione architecto pariatur, modi est dolores ea eum vel maxime. Quos non dolorem est laboriosam adipisci totam at consequatur corrupti aperiam ab.</p>
+          <p class="event-description">Benson Boone makes his long awaited return to LA for his world tour. </p>
           <a class="btn btn-primary w-full">View Details</a>
         </div>
         <!-- ================================================================== -->
