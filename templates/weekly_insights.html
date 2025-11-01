@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pulse - Weekly Insights</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="container">
@@ -12,12 +13,61 @@
       <div class="logo">Pulse</div>
       <p class="subtitle">Weekly Insights</p>
     </header>
+    <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
     <section class="card">
-      <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-      <h2>Weekly Insights</h2>
-      <p>This is the Weekly Insights page.</p>
-      <!-- ================================================================== -->
-      <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+      <h2>Upcoming News</h2>
+      <p>Fresh rumors, drops, tours, and collabs from artists you follow.</p>
+
+      <ul class="news-list">
+        <li class="news-card">
+          <div class="news-body">
+            <h3 class="news-title">Lebron James teases collab with hit Pop Star Drake</h3>
+            <p class="news-summary">NBA Star Lebron James posted a 10‑second clip with Drake in the background. Fans expect a TikTok dance challenge to drop alongside the track.</p>
+          </div>
+          <div class="news-meta">
+            <span class="badge">Collaboration</span>
+            <span class="badge">Teaser</span>
+            <span class="pill-date">Nov 3</span>
+          </div>
+          <div class="news-actions">
+            <a class="btn btn-ghost" href="#">Remind me</a>
+            <a class="btn btn-primary" href="#">Pre‑save</a>
+          </div>
+        </li>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <li class="news-card">
+          <div class="news-body">
+            <h3 class="news-title">Lo‑Fi Collective announces West Coast mini‑tour</h3>
+            <p class="news-summary">Six intimate shows with vinyl pop‑ups and beat‑making workshops. Los Angeles kickoff rumored to feature surprise guests.</p>
+          </div>
+          <div class="news-meta">
+            <span class="badge">Tour</span>
+            <span class="badge">Workshop</span>
+            <span class="pill-date">Nov 7</span>
+          </div>
+          <div class="news-actions">
+            <a class="btn btn-ghost" href="#">View dates</a>
+            <a class="btn btn-primary" href="#">Get tickets</a>
+          </div>
+        </li>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <li class="news-card">
+          <div class="news-body">
+            <h3 class="news-title">Mariah Carey starts to defrost ahead of Christmas</h3>
+            <p class="news-summary">Producers spotted together in the studio as well as a sizeable amount of water being found in her Los Angeles mansion</p>
+          </div>
+          <div class="news-meta">
+            <span class="badge">New Song</span>
+            <span class="badge">Rumor</span>
+            <span class="pill-date">Dec 25</span>
+          </div>
+          <div class="news-actions">
+            <a class="btn btn-ghost" href="#">Follow rumor</a>
+            <a class="btn btn-primary" href="#">Notify on confirm</a>
+          </div>
+        </li>
+
+      <p style="margin-top:16px;"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
     </section>
   </main>
 </body>
