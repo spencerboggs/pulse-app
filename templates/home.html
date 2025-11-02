@@ -5,25 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pulse - Home</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <main class="container">
     <header class="brand">
-      <div class="logo">Pulse</div>
-      <p class="subtitle">Home</p>
+      <div class="logo">pulse</div>
+      <p class="subtitle">meet people through music</p>
     </header>
     <section class="card">
-      <h2>Welcome!</h2>
-      <p>Select a page to continue:</p>
+      <h2>welcome</h2>
       <div class="grid-2" style="margin-top: 12px;">
-        <a class="btn btn-primary w-full" href="{{ url_for('profile') }}">Profile</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('events') }}">Events</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('settings') }}">Settings</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('weekly_insights') }}">Weekly Insights</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('matchmaking') }}">Matchmaking</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('message') }}">Message</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('profile') }}">profile</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('events') }}">events</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('settings') }}">settings</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('weekly_insights') }}">weekly insights</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('matchmaking') }}">matchmaking</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('message') }}">message</a>
       </div>
-      <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('auth') }}">Back to Auth</a></p>
+      <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('auth') }}">back to auth</a></p>
     </section>
   </main>
 </body>
