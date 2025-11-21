@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,24 +17,40 @@
       display: block;
       margin: 15px auto;
     }
+
     .profile-section {
       margin-top: 20px;
       background-color: #1c1c1c;
       padding: 16px;
       border-radius: 12px;
     }
+
     .music-info {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px 20px;
       color: #ddd;
       margin-top: 10px;
-    } 
-    .music-info p { margin: 0; font-size: 0.95rem; }
-    .info-label { font-weight: bold; color: #a1ffce; }
-    @media (max-width: 600px) { .music-info { grid-template-columns: 1fr; } }
+    }
+
+    .music-info p {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .info-label {
+      font-weight: bold;
+      color: #a1ffce;
+    }
+
+    @media (max-width: 600px) {
+      .music-info {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
+
 <body>
   <main class="container">
     <header class="brand">
@@ -64,4 +81,5 @@
     </section>
   </main>
 </body>
+
 </html>

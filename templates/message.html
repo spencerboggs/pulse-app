@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,10 +8,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
+
 <body>
   <main class="container">
     <header class="brand">
-      <div class="logo">pulse</div>
+      <div class="logo">Pulse</div>
       <p class="subtitle">Message</p>
     </header>
 
@@ -91,70 +93,71 @@
   </main>
 
   <!-- ========== PLACEHOLDER CHAT UI - REMOVE BEFORE PRODUCTION ========== -->
-<dialog id="chatModal" aria-label="Chat dialog">
-  <div class="chat-header">
-    <div class="chat-title">Chat with <span id="chatWith">Friend</span></div>
-    <button class="btn-close" aria-label="Close" id="closeChat">&times;</button>
-  </div>
+  <dialog id="chatModal" aria-label="Chat dialog">
+    <div class="chat-header">
+      <div class="chat-title">Chat with <span id="chatWith">Friend</span></div>
+      <button class="btn-close" aria-label="Close" id="closeChat">&times;</button>
+    </div>
 
-  <div class="chat-body">
-    <div class="chat-thread" id="chatThread">
-      <div class="msg from-them">
-        <div class="avatar them" id="avatarThem">AJ</div>
-        <div class="bubble">hey! what are you listening to lately?</div>
-      </div>
-      <div class="msg from-me">
-        <div class="bubble">just been listening to daniel ceasar's newest album wbu?</div>
-        <div class="avatar me" id="avatarMe">You</div>
+    <div class="chat-body">
+      <div class="chat-thread" id="chatThread">
+        <div class="msg from-them">
+          <div class="avatar them" id="avatarThem">AJ</div>
+          <div class="bubble">hey! what are you listening to lately?</div>
+        </div>
+        <div class="msg from-me">
+          <div class="bubble">just been listening to daniel ceasar's newest album wbu?</div>
+          <div class="avatar me" id="avatarMe">You</div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="chat-footer">
-    <input type="text" placeholder="Type a message…" disabled>
-    <button class="btn btn-primary" disabled>Send</button>
-  </div>
-</dialog>
+    <div class="chat-footer">
+      <input type="text" placeholder="Type a message…" disabled>
+      <button class="btn btn-primary" disabled>Send</button>
+    </div>
+  </dialog>
 
 
 
   <script>
-  const modal = document.getElementById('chatModal');
-  const chatWith = document.getElementById('chatWith');
-  const closeBtn = document.getElementById('closeChat');
-  const avatarThem = document.getElementById('avatarThem');
+    const modal = document.getElementById('chatModal');
+    const chatWith = document.getElementById('chatWith');
+    const closeBtn = document.getElementById('closeChat');
+    const avatarThem = document.getElementById('avatarThem');
 
-  function getInitials(name) {
-    if (!name) return '??';
-    const parts = name.trim().split(/\s+/).slice(0, 2);
-    return parts.map(p => p[0]?.toUpperCase() || '').join('') || '??';
-  }
+    function getInitials(name) {
+      if (!name) return '??';
+      const parts = name.trim().split(/\s+/).slice(0, 2);
+      return parts.map(p => p[0]?.toUpperCase() || '').join('') || '??';
+    }
 
-  document.querySelectorAll('.message-actions .btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const name = btn.getAttribute('data-name') || 'Friend';
-      chatWith.textContent = name;
-      if (avatarThem) avatarThem.textContent = getInitials(name);
+    document.querySelectorAll('.message-actions .btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.getAttribute('data-name') || 'Friend';
+        chatWith.textContent = name;
+        if (avatarThem) avatarThem.textContent = getInitials(name);
 
-      if (typeof modal.showModal === 'function') {
-        modal.showModal();
-      } else {
-        modal.setAttribute('open', 'open');
-      }
+        if (typeof modal.showModal === 'function') {
+          modal.showModal();
+        } else {
+          modal.setAttribute('open', 'open');
+        }
+      });
     });
-  });
 
-  closeBtn.addEventListener('click', () => modal.close());
+    closeBtn.addEventListener('click', () => modal.close());
 
-  // click outside to close (kept from your file)
-  modal.addEventListener('click', (e) => {
-    const rect = modal.getBoundingClientRect();
-    const inDialog = e.clientX >= rect.left && e.clientX <= rect.right &&
-                     e.clientY >= rect.top  && e.clientY <= rect.bottom;
-    if (!inDialog) modal.close();
-  });
-</script>
+    // click outside to close (kept from your file)
+    modal.addEventListener('click', (e) => {
+      const rect = modal.getBoundingClientRect();
+      const inDialog = e.clientX >= rect.left && e.clientX <= rect.right &&
+        e.clientY >= rect.top && e.clientY <= rect.bottom;
+      if (!inDialog) modal.close();
+    });
+  </script>
 
   <!-- ===================================================================== -->
 </body>
+
 </html>
