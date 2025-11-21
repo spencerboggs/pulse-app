@@ -22,6 +22,10 @@ body {
   height: 100%;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  text-transform: capitalize;
+}
+
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
@@ -46,6 +50,7 @@ h1 {
 
 p {
   color: var(--muted);
+  text-transform: capitalize;
 }
 
 a {
@@ -390,6 +395,7 @@ input[type="password"] {
   border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
+  text-transform: capitalize;
   font-family: 'Poppins', sans-serif;
   transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
 }
