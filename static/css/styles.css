@@ -656,17 +656,18 @@ input[type="password"] {
 }
 
 /* ============================================================
-   MATCHMAKERS FEED — sleek, modern, minimal
+   MATCHMAKER & MESSAGE FEED
    ============================================================ */
 
-.matchmaker-feed {
+.matchmaker-feed,
+.message-feed {
   display: grid;
   grid-template-columns: 1fr;
   gap: 14px;
   margin-top: 16px;
 }
 
-.mm-card {
+.user-card {
   background: rgba(11, 29, 58, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -675,31 +676,31 @@ input[type="password"] {
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
 
-.mm-card:hover {
+.user-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
   border-color: rgba(251, 146, 60, 0.35);
 }
 
-.mm-header {
+.user-header {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
 }
 
-.mm-title {
+.user-title {
   font-weight: 600;
   color: var(--fg);
 }
 
-.mm-time {
+.user-time {
   margin-left: auto;
   font-size: .82rem;
   color: rgba(255, 246, 215, 0.8);
 }
 
-.mm-user {
+.user-main {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -707,7 +708,7 @@ input[type="password"] {
   padding: 8px 0;
 }
 
-.mm-avatar {
+.user-avatar {
   width: 44px;
   height: 44px;
   border-radius: 999px;
@@ -721,18 +722,18 @@ input[type="password"] {
   overflow: hidden;
 }
 
-.mm-avatar img {
+.user-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.mm-meta {
+.user-meta {
   min-width: 0;
 }
 
-.mm-name {
+.user-name {
   font-weight: 600;
   color: var(--fg);
   white-space: nowrap;
@@ -740,7 +741,7 @@ input[type="password"] {
   text-overflow: ellipsis;
 }
 
-.mm-handle {
+.user-handle {
   color: var(--muted);
   font-size: .9rem;
   white-space: nowrap;
@@ -748,23 +749,23 @@ input[type="password"] {
   text-overflow: ellipsis;
 }
 
-.mm-actions {
+.user-actions {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
   gap: 10px;
 }
 
-.mm-actions .btn {
+.user-actions .btn {
   padding: 8px 12px;
   border-radius: 10px;
 }
 
-.mm-actions .btn-ghost {
+.user-actions .btn-ghost {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.mm-tags {
+.user-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -792,21 +793,21 @@ input[type="password"] {
 }
 
 @media (max-width: 600px) {
-  .mm-user {
+  .user-main {
     grid-template-columns: auto 1fr;
     grid-template-areas: "avatar meta" "actions actions";
     gap: 10px;
   }
 
-  .mm-avatar {
+  .user-avatar {
     grid-area: avatar;
   }
 
-  .mm-meta {
+  .user-meta {
     grid-area: meta;
   }
 
-  .mm-actions {
+  .user-actions {
     grid-area: actions;
     grid-auto-flow: row;
     grid-auto-columns: unset;

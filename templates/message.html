@@ -19,74 +19,75 @@
     <section class="card">
       <h2>Message</h2>
 
-      <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-      <div class="list" style="margin-top: 8px;">
+      <section class="message-feed">
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">AJ</div>
+            <div class="user-avatar">AJ</div>
             <div class="user-meta">
               <span class="user-name">Ava Johnson</span>
               <span class="user-handle">@avajams</span>
             </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full" data-username="@avajams" data-name="Ava Johnson">Message</a>
+            <div class="user-actions">
+              <a class="btn btn-primary" data-username="@avajams" data-name="Ava Johnson">Message</a>
+            </div>
           </div>
         </div>
 
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">MB</div>
+            <div class="user-avatar">MB</div>
             <div class="user-meta">
               <span class="user-name">Miles Brown</span>
               <span class="user-handle">@milesbeats</span>
             </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full" data-username="@milesbeats" data-name="Miles Brown">Message</a>
+            <div class="user-actions">
+              <a class="btn btn-primary" data-username="@milesbeats" data-name="Miles Brown">Message</a>
+            </div>
           </div>
         </div>
 
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">RL</div>
+            <div class="user-avatar">RL</div>
             <div class="user-meta">
               <span class="user-name">Riley Lopez</span>
               <span class="user-handle">@riley.lo</span>
             </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full" data-username="@riley.lo" data-name="Riley Lopez">Message</a>
+            <div class="user-actions">
+              <a class="btn btn-primary w-full" data-username="@riley.lo" data-name="Riley Lopez">Message</a>
+            </div>
           </div>
         </div>
 
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">TK</div>
+            <div class="user-avatar">TK</div>
             <div class="user-meta">
               <span class="user-name">Theo Kim</span>
               <span class="user-handle">@theok</span>
             </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full" data-username="@theok" data-name="Theo Kim">Message</a>
+            <div class="user-actions">
+              <a class="btn btn-primary w-full" data-username="@theok" data-name="Theo Kim">Message</a>
+            </div>
           </div>
         </div>
 
         <div class="user-card">
           <div class="user-main">
-            <div class="avatar">EC</div>
+            <div class="user-avatar">EC</div>
             <div class="user-meta">
               <span class="user-name">Emma Carter</span>
               <span class="user-handle">@emcart</span>
             </div>
-          </div>
-          <div class="message-actions">
-            <a class="btn btn-primary w-full" data-username="@emcart" data-name="Emma Carter">Message</a>
+            <div class="user-actions">
+              <a class="btn btn-primary w-full" data-username="@emcart" data-name="Emma Carter">Message</a>
+            </div>
           </div>
         </div>
-      </div>
-      <!-- ================================================================== -->
+        <!-- ================================================================== -->
+
+      </section>
 
       <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
     </section>
@@ -118,8 +119,6 @@
     </div>
   </dialog>
 
-
-
   <script>
     const modal = document.getElementById('chatModal');
     const chatWith = document.getElementById('chatWith');
@@ -132,7 +131,7 @@
       return parts.map(p => p[0]?.toUpperCase() || '').join('') || '??';
     }
 
-    document.querySelectorAll('.message-actions .btn').forEach(btn => {
+    document.querySelectorAll('.user-actions .btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const name = btn.getAttribute('data-name') || 'Friend';
         chatWith.textContent = name;
@@ -148,7 +147,6 @@
 
     closeBtn.addEventListener('click', () => modal.close());
 
-    // click outside to close (kept from your file)
     modal.addEventListener('click', (e) => {
       const rect = modal.getBoundingClientRect();
       const inDialog = e.clientX >= rect.left && e.clientX <= rect.right &&
