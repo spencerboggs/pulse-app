@@ -3,6 +3,7 @@
    ============================================================ */
 :root {
   --bg: #FF961D;
+  --bg-gradient: #b43a25;
   --fg: #FFF6D7;
   --muted: #FFF6D7;
   --accent: #FFF6D7;
@@ -29,9 +30,21 @@ h1, h2, h3, h4, h5, h6 {
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  background: var(--bg);
+  animation: background-animation 45s ease infinite;
+  background: linear-gradient(135deg, var(--bg), var(--bg-gradient), var(--bg), var(--bg-gradient));
+  background-size: 600% 600%;
   color: var(--fg);
   line-height: 1.5;
+}
+
+@keyframes background-animation {
+  /* shift around the background gradient */
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* ============================================================
