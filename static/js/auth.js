@@ -32,7 +32,7 @@ document.getElementById('form-login')?.addEventListener('submit', (e) => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(e.currentTarget).entries());
   console.log('[Pulse] Login submit:', data);
-  alert('Database not set up yet');
+  // alert('Database not set up yet');
   window.location.href = '/home';
 });
 
