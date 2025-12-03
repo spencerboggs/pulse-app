@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse - Matchmaking</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+  <main class="container">
+    <header class="brand">
+      <div class="logo">Pulse</div>
+      <p class="subtitle">Matchmaking</p>
+    </header>
+    <section class="card">
+      <h2>Suggested Accounts</h2>
+      <section class="matchmaker-feed">
+        <article class="user-card">
+          <div class="user-header">
+            <div class="user-title">Suggested for you</div>
+          </div>
+          <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+          <div class="user-main">
+            <div class="user-avatar">P1</div>
+            <div class="user-meta">
+              <div class="user-name">Lena Ortiz</div>
+              <div class="user-handle">@lenaverse</div>
+            </div>
+            <div class="user-actions">
+              <a class="btn btn-ghost">Friend</a>
+              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Lena Ortiz') }}">View</a>
+            </div>
+          </div>
+        </article>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <article class="user-card">
+          <div class="user-header">
+            <div class="user-title">Suggested for you</div>
+          </div>
+          <div class="user-main">
+            <div class="user-avatar">P2</div>
+            <div class="user-meta">
+              <div class="user-name">Caleb Tran</div>
+              <div class="user-handle">@c0debycaleb</div>
+            </div>
+            <div class="user-actions">
+              <a class="btn btn-ghost">Friend</a>
+              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Caleb Tran') }}">View</a>
+            </div>
+          </div>
+        </article>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <article class="user-card">
+          <div class="user-header">
+            <div class="user-title">Suggested for you</div>
+          </div>
+          <div class="user-main">
+            <div class="user-avatar">P3</div>
+            <div class="user-meta">
+              <div class="user-name">Maya Chen</div>
+              <div class="user-handle">@itsmayac</div>
+            </div>
+            <div class="user-actions">
+              <a class="btn btn-ghost">Friend</a>
+              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Maya Chen') }}">View</a>
+            </div>
+          </div>
+        </article>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <article class="user-card">
+          <div class="user-header">
+            <div class="user-title">Suggested for you</div>
+          </div>
+          <div class="user-main">
+            <div class="user-avatar">P4</div>
+            <div class="user-meta">
+              <div class="user-name">Dante Rivera</div>
+              <div class="user-handle">@dantethebuilder</div>
+            </div>
+            <div class="user-actions">
+              <a class="btn btn-ghost">Friend</a>
+              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Dante Rivera') }}">View</a>
+            </div>
+          </div>
+        </article>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <article class="user-card">
+          <div class="user-header">
+            <div class="user-title">Suggested for you</div>
+          </div>
+          <div class="user-main">
+            <div class="user-avatar">P5</div>
+            <div class="user-meta">
+              <div class="user-name">Eli Navarro</div>
+              <div class="user-handle">@elinavdev</div>
+            </div>
+            <div class="user-actions">
+              <a class="btn btn-ghost">Friend</a>
+              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Eli Navarro') }}">View</a>
+            </div>
+          </div>
+        </article>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <article class="user-card">
+          <div class="user-header">
+            <div class="user-title">Suggested for you</div>
+          </div>
+          <div class="user-main">
+            <div class="user-avatar">P6</div>
+            <div class="user-meta">
+              <div class="user-name">Zoey Kim</div>
+              <div class="user-handle">@zoeyk.dev</div>
+            </div>
+            <div class="user-actions">
+              <a class="btn btn-ghost">Friend</a>
+              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Zoey Kim') }}">View</a>
+            </div>
+          </div>
+        </article>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <article class="user-card">
+          <div class="user-header">
+            <div class="user-title">Suggested for you</div>
+          </div>
+          <div class="user-main">
+            <div class="user-avatar">P7</div>
+            <div class="user-meta">
+              <div class="user-name">Nora Patel</div>
+              <div class="user-handle">@norapixel</div>
+            </div>
+            <div class="user-actions">
+              <a class="btn btn-ghost">Friend</a>
+              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Nora Patel') }}">View</a>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+    </section>
+  </main>
+</body>
+
+</html>
