@@ -88,7 +88,6 @@ def create_app() -> Flask:
         }).execute()
 
         user_id = user_result.data[0]["id"] 
-        """
 
         # Insert into profiles
         supabase.table("profiles").insert({
@@ -100,6 +99,7 @@ def create_app() -> Flask:
         # Auto-login
         session["user_id"] = user_id
         session["username"] = username
+        """
 
         return redirect(url_for("home"))
 
