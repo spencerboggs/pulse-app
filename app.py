@@ -1,32 +1,48 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, request, session, flash
+from werkzeug.security import generate_password_hash, check_password_hash
+from supabase import create_client, Client
+from dotenv import load_dotenv
 import os, re
+
+# ============================================================
+# ENVIRONMENT LOADING
+# ============================================================
+
+load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# ============================================================
+# FLASK APP FACTORY
+# ============================================================
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    app.secret_key = os.getenv("FLASK_SECRET", "SUPER_SECRET_KEY")
 
     # ============================================================
     # HELPERS
     # ============================================================
-    
+
     def slugify(name: str) -> str:
-        """Convert a name to a URL-friendly slug."""
         return re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')
 
     def pick_user_image_by_slug(slug: str) -> str:
-        """Return a static URL for the best image matching the given slug.
-        Falls back to placeholder if no image found."""
         uploads_path = os.path.join(app.static_folder, "uploads")
         os.makedirs(uploads_path, exist_ok=True)
 
         exts = (".jpg", ".jpeg", ".png", ".gif", ".webp")
-        
+
         # Try exact slug match
         for ext in exts:
             candidate = os.path.join(uploads_path, f"{slug}{ext}")
             if os.path.exists(candidate):
                 return url_for("static", filename=f"uploads/{slug}{ext}")
 
-        # Fallback to most recent image
+        # fallback to latest upload
         images = [f for f in os.listdir(uploads_path) if f.lower().endswith(exts)]
         if images:
             latest = max(images, key=lambda f: os.path.getmtime(os.path.join(uploads_path, f)))
@@ -37,41 +53,113 @@ def create_app() -> Flask:
     # ============================================================
     # ROUTES
     # ============================================================
-    
+
     @app.route("/")
     def index():
+        return redirect(url_for("home"))
+
+    # ===== AUTH PAGE (shows login + signup forms) =====
+    @app.route("/auth")
+    def auth():
+        return render_template("profile.html")
+
+    # ===== SIGNUP =====
+    @app.route("/signup", methods=["POST"])
+    def signup():
+        full_name = request.form["fullName"]
+        email = request.form["email"]
+        username = request.form["username"]
+        password = request.form["password"]
+
+        """ Fix database setup to enable this
+        # Check for existing user
+        existing = supabase.table("auth_users").select("*").eq("username", username).execute()
+        if existing.data:
+            flash("Username already taken.", "error")
+            return redirect(url_for("auth"))
+
+        # Hash password
+        password_hash = generate_password_hash(password)
+
+        # Insert into auth_users
+        user_result = supabase.table("auth_users").insert({
+            "username": username,
+            "password_hash": password_hash
+        }).execute()
+
+        user_id = user_result.data[0]["id"] 
+        """
+
+        # Insert into profiles
+        supabase.table("profiles").insert({
+            "id": user_id,
+            "display_name": full_name,
+            "email": email
+        }).execute()
+
+        # Auto-login
+        session["user_id"] = user_id
+        session["username"] = username
+
+        return redirect(url_for("home"))
+
+    # ===== LOGIN =====
+    @app.route("/login", methods=["POST"])
+    def login():
+        username = request.form["username"]
+        password = request.form["password"]
+
+        user_query = supabase.table("auth_users").select("*").eq("username", username).execute()
+        user = user_query.data[0] if user_query.data else None
+
+        if not user or not check_password_hash(user["password_hash"], password):
+            flash("Invalid username or password.", "error")
+            return redirect(url_for("auth"))
+
+        session["user_id"] = user["id"]
+        session["username"] = username
+
+        return redirect(url_for("home"))
+
+    # ===== LOGOUT =====
+    @app.route("/logout")
+    def logout():
+        session.clear()
         return redirect(url_for("auth"))
 
-    @app.route("/auth", methods=["GET", "POST"])
-    def auth():
-        return render_template("auth.html")
-
+    # ===== HOME =====
     @app.route("/home")
     def home():
-        return render_template("home.html")
+        if "user_id" not in session:
+            return redirect(url_for("auth"))
+        return render_template("home.html", username=session["username"])
 
+    # ===== PROFILE =====
     @app.route("/profile")
     def profile():
-        # ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ==========
-        main_user_slug = "main-user"
-        img_url = pick_user_image_by_slug(main_user_slug)
-        display_name = "Your Profile"
-        # =================================================================
-        return render_template("profile.html", img_url=img_url, display_name=display_name)
+        if "user_id" not in session:
+            return redirect(url_for("auth"))
+        slug = slugify(session["username"])
+        img_url = pick_user_image_by_slug(slug)
+        return render_template("profile.html", img_url=img_url, display_name=session["username"])
 
     @app.route("/u/<path:username>")
     def user_profile(username):
-        # ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ==========
         slug = slugify(username)
         img_url = pick_user_image_by_slug(slug)
-        display_name = username
-        # =================================================================
-        return render_template("profile_view.html", img_url=img_url, display_name=display_name)
+        return render_template("profile_view.html", img_url=img_url, display_name=username)
 
+    # ===== TEST ROUTE (Optional) =====
+    @app.route("/test_supabase")
+    def test_supabase():
+        data = supabase.table("profiles").select("*").execute()
+        return {"data": data.data, "error": data.error}
+
+    # ===== OTHER ROUTES =====
     @app.route("/events")
     def events():
         return render_template("events.html")
-    
+
     @app.route("/concert-map")
     def concert_map():
         return render_template("concert_map.html")
@@ -101,6 +189,7 @@ def create_app() -> Flask:
         return render_template("report.html")
 
     return app
+
 
 app = create_app()
 
