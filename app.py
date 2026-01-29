@@ -11,7 +11,7 @@ import os, re
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -56,12 +56,12 @@ def create_app() -> Flask:
 
     @app.route("/")
     def index():
-        return redirect(url_for("auth"))
+        return redirect(url_for("home"))
 
     # ===== AUTH PAGE (shows login + signup forms) =====
     @app.route("/auth")
     def auth():
-        return render_template("auth.html")
+        return render_template("profile.html")
 
     # ===== SIGNUP =====
     @app.route("/signup", methods=["POST"])
@@ -71,6 +71,7 @@ def create_app() -> Flask:
         username = request.form["username"]
         password = request.form["password"]
 
+        """ Fix database setup to enable this
         # Check for existing user
         existing = supabase.table("auth_users").select("*").eq("username", username).execute()
         if existing.data:
@@ -86,7 +87,8 @@ def create_app() -> Flask:
             "password_hash": password_hash
         }).execute()
 
-        user_id = user_result.data[0]["id"]
+        user_id = user_result.data[0]["id"] 
+        """
 
         # Insert into profiles
         supabase.table("profiles").insert({
