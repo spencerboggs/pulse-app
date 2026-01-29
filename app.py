@@ -61,7 +61,8 @@ def create_app() -> Flask:
     # ===== AUTH PAGE (shows login + signup forms) =====
     @app.route("/auth")
     def auth():
-        return render_template("profile.html")
+        # Change back to auth.html when auth is set up
+        return render_template("home.html")
 
     # ===== SIGNUP =====
     @app.route("/signup", methods=["POST"])
@@ -130,15 +131,17 @@ def create_app() -> Flask:
     # ===== HOME =====
     @app.route("/home")
     def home():
-        if "user_id" not in session:
-            return redirect(url_for("auth"))
+        # Uncomment when auth is set up
+        # if "user_id" not in session:
+        #     return redirect(url_for("auth"))
         return render_template("home.html", username=session["username"])
 
     # ===== PROFILE =====
     @app.route("/profile")
     def profile():
-        if "user_id" not in session:
-            return redirect(url_for("auth"))
+        # Uncomment when auth is set up
+        # if "user_id" not in session:
+        #     return redirect(url_for("auth"))
         slug = slugify(session["username"])
         img_url = pick_user_image_by_slug(slug)
         return render_template("profile.html", img_url=img_url, display_name=session["username"])
