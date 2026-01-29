@@ -7,6 +7,7 @@ A social web app that allows you to share your favorite music and meet new peopl
 git clone https://github.com/spencerboggs/pulse-app.git
 cd .\pulse-app\
 pip install -r requirements.txt
+npm install
 ```
 > ### 2. Run development server after requirements install:
 ```
