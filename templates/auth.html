@@ -23,7 +23,7 @@
 
     <section id="login-form" class="card" hidden>
       <h2>Log in</h2>
-      <form id="form-login">
+      <form id="form-login" method="POST" action="/login">
         <label>
           <span>Username or email</span>
           <input name="identity" type="text" autocomplete="username" placeholder="Username" required>
@@ -38,7 +38,7 @@
 
     <section id="signup-form" class="card" hidden>
       <h2>Sign up</h2>
-      <form id="form-signup">
+      <form id="form-signup" method="POST" action="/signup">
         <div class="grid-2">
           <label>
             <span>First name</span>

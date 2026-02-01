@@ -56,71 +56,78 @@ def create_app() -> Flask:
 
     @app.route("/")
     def index():
-        return redirect(url_for("home"))
+        return redirect(url_for("auth"))
 
     # ===== AUTH PAGE (shows login + signup forms) =====
     @app.route("/auth")
     def auth():
         # Change back to auth.html when auth is set up
-        return render_template("home.html")
+        return render_template("auth.html")
 
     # ===== SIGNUP =====
     @app.route("/signup", methods=["POST"])
     def signup():
-        full_name = request.form["fullName"]
+        first_name = request.form["firstName"]
+        last_name = request.form["lastName"]
         email = request.form["email"]
         username = request.form["username"]
         password = request.form["password"]
+        confirm = request.form["confirmPassword"]
 
-        """ Fix database setup to enable this
-        # Check for existing user
-        existing = supabase.table("auth_users").select("*").eq("username", username).execute()
-        if existing.data:
-            flash("Username already taken.", "error")
+        if password != confirm:
+            flash("Passwords do not match.", "error")
             return redirect(url_for("auth"))
 
-        # Hash password
+        # Check if username or email exists
+        existing = supabase.table("users") \
+            .select("id") \
+            .or_(f"username.eq.{username},email.eq.{email}") \
+            .execute()
+
+        if existing.data:
+            flash("Username or email already exists.", "error")
+            return redirect(url_for("auth"))
+
         password_hash = generate_password_hash(password)
 
-        # Insert into auth_users
-        user_result = supabase.table("auth_users").insert({
+        result = supabase.table("users").insert({
             "username": username,
+            "email": email,
             "password_hash": password_hash
         }).execute()
 
-        user_id = user_result.data[0]["id"] 
+        user = result.data[0]
 
-        # Insert into profiles
-        supabase.table("profiles").insert({
-            "id": user_id,
-            "display_name": full_name,
-            "email": email
-        }).execute()
-
-        # Auto-login
-        session["user_id"] = user_id
-        session["username"] = username
-        """
+        # Login user
+        session["user_id"] = user["id"]
+        session["username"] = user["username"]
 
         return redirect(url_for("home"))
+
 
     # ===== LOGIN =====
     @app.route("/login", methods=["POST"])
     def login():
-        username = request.form["username"]
+        identity = request.form["identity"]
         password = request.form["password"]
 
-        user_query = supabase.table("auth_users").select("*").eq("username", username).execute()
-        user = user_query.data[0] if user_query.data else None
+        query = supabase.table("users") \
+            .select("*") \
+            .or_(f"username.eq.{identity},email.eq.{identity}") \
+            .limit(1) \
+            .execute()
+
+        user = query.data[0] if query.data else None
 
         if not user or not check_password_hash(user["password_hash"], password):
-            flash("Invalid username or password.", "error")
+            flash("Invalid credentials.", "error")
             return redirect(url_for("auth"))
 
         session["user_id"] = user["id"]
-        session["username"] = username
+        session["username"] = user["username"]
 
         return redirect(url_for("home"))
+
 
     # ===== LOGOUT =====
     @app.route("/logout")
@@ -131,20 +138,27 @@ def create_app() -> Flask:
     # ===== HOME =====
     @app.route("/home")
     def home():
-        # Uncomment when auth is set up
-        # if "user_id" not in session:
-        #     return redirect(url_for("auth"))
+        if "user_id" not in session:
+            return redirect(url_for("auth"))
+
         return render_template("home.html", username=session["username"])
+
 
     # ===== PROFILE =====
     @app.route("/profile")
     def profile():
-        # Uncomment when auth is set up
-        # if "user_id" not in session:
-        #     return redirect(url_for("auth"))
+        if "user_id" not in session:
+            return redirect(url_for("auth"))
+
         slug = slugify(session["username"])
         img_url = pick_user_image_by_slug(slug)
-        return render_template("profile.html", img_url=img_url, display_name=session["username"])
+
+        return render_template(
+            "profile.html",
+            img_url=img_url,
+            display_name=session["username"]
+        )
+
 
     @app.route("/u/<path:username>")
     def user_profile(username):

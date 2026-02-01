@@ -27,27 +27,31 @@ signupBtn?.addEventListener('click', () => showSignup());
 
 showLogin();
 
-// ========== PLACEHOLDER LOGIC - REMOVE BEFORE PRODUCTION ==========
-document.getElementById('form-login')?.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.currentTarget).entries());
-  console.log('[Pulse] Login submit:', data);
-  // alert('Database not set up yet');
-  window.location.href = '/home';
-});
+// ---- Make forms POST to Flask ----
+const loginForm = document.getElementById('form-login');
+const signupForm = document.getElementById('form-signup');
 
-document.getElementById('form-signup')?.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.currentTarget).entries());
-  console.log('[Pulse] Signup submit:', data);
-  if (signupWarning) signupWarning.hidden = true;
-  const password = data.password || '';
-  const confirm = data.confirmPassword || '';
-  if (password !== confirm) {
-    if (signupWarning) signupWarning.hidden = false;
-    return;
-  }
-  alert('Database not set up yet');
-  window.location.href = '/home';
-});
-// ===================================================================
+if (loginForm) {
+  loginForm.setAttribute('method', 'POST');
+  loginForm.setAttribute('action', '/login');
+  // Do NOT prevent default — let the browser submit
+}
+
+if (signupForm) {
+  signupForm.setAttribute('method', 'POST');
+  signupForm.setAttribute('action', '/signup');
+
+  // Keep client-side password match check, but still submit to Flask if OK
+  signupForm.addEventListener('submit', (e) => {
+    if (signupWarning) signupWarning.hidden = true;
+
+    const fd = new FormData(signupForm);
+    const password = (fd.get('password') || '').toString();
+    const confirm = (fd.get('confirmPassword') || '').toString();
+
+    if (password !== confirm) {
+      e.preventDefault();
+      if (signupWarning) signupWarning.hidden = false;
+    }
+  });
+}
