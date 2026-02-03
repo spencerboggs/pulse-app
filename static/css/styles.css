@@ -827,3 +827,29 @@ input[type="password"] {
     grid-template-columns: 1fr 1fr;
   }
 }
+/* ============================================================
+   IN-APP MESSAGING
+   ============================================================ */
+.in-app-messaging,
+.container {
+  border: 2px solid #000000;
+  background-color: #FF961D;
+  border-radius: 6px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.lighter {
+  background-color: #FFF6D7;
+}
+
+.container::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+.user-time {
+  font-size: .82rem;
+  color: rgba(0, 0, 0, 0.3);
+}
