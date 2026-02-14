@@ -1,8 +1,8 @@
-from flask import Flask, render_template, redirect, url_for, request, session, flash
+from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import os, re
+import os, re, requests
 
 # ============================================================
 # ENVIRONMENT LOADING
@@ -206,6 +206,54 @@ def create_app() -> Flask:
         return render_template("report.html")
 
     return app
+
+# ===== Spotify Retrieval =====
+@app.route("/spotify/test-top-artists")
+def spotify_test_top_artists():
+    # TEMP: pass token in header to test retrieval
+    auth = request.headers.get("Authorization", "")
+    token = auth.replace("Bearer ", "")
+
+    if not token:
+        return jsonify({"error": "Missing Spotify token"}), 401
+
+    # Call Spotify API
+    r = requests.get(
+        "https://api.spotify.com/v1/me/top/artists",
+        headers={"Authorization": f"Bearer {token}"},
+        params={"limit": 20, "time_range": "medium_term"}
+    )
+
+    if r.status_code != 200:
+        return jsonify({"error": "Spotify error", "status": r.status_code, "body": r.text}), r.status_code
+
+    data = r.json()
+
+    # Return only what we need
+    artists = []
+    for a in data.get("items", []):
+        image = a["images"][0]["url"] if a.get("images") else None
+        artists.append({
+            "id": a["id"],
+            "name": a["name"],
+            "image": image
+        })
+
+    return jsonify(artists)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 app = create_app()
