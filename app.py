@@ -16,7 +16,50 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-
+# =========================
+# EVENT DATA (placeholder)
+# =========================
+EVENTS = {
+    "daniel-caesar": {
+        "title": "Daniel Caesar Concert",
+        "artist": "Daniel Caesar",
+        "date": "11/23/2025",
+        "location": "So-Fi Stadium",
+        "description": "Come experience Daniel Caesar's newest album LIVE at SoFi Stadium",
+        "image": "images/placeholder_caser.png",  # stored in /static/images/
+        "ticket_url": "https://www.ticketmaster.com/",
+        "socials": {
+            "instagram": "https://www.instagram.com/danielcaesar/",
+            "spotify": "https://open.spotify.com/artist/20wkVLutqVOYrc0kxFs7rA"
+        }
+    },
+    "flawed-mangoes": {
+        "title": "Flawed Mangoes Debut Show",
+        "artist": "Flawed Mangoes",
+        "date": "9/28/2025",
+        "location": "EchoPlex",
+        "description": "Up and comer artist Flawed Mangoes has his first live show at Echo Plex",
+        "image": "images/placeholder_flawed.jpg",
+        "ticket_url": "https://www.ticketmaster.com/",
+        "socials": {
+            "instagram": "https://www.instagram.com/",
+            "spotify": "https://open.spotify.com/"
+        }
+    },
+    "benson-boone": {
+        "title": "Benson Boone World Tour",
+        "artist": "Benson Boone",
+        "date": "12/25/2025",
+        "location": "Youtube Stadium",
+        "description": "Benson Boone makes his long awaited return to LA for his world tour.",
+        "image": "images/placeholder_benson.jpg",
+        "ticket_url": "https://www.ticketmaster.com/",
+        "socials": {
+            "instagram": "https://www.instagram.com/bensonboone/",
+            "spotify": "https://open.spotify.com/artist/22vgEDb5hykfaTwLuskFGD"
+        }
+    }
+}
 
 # ============================================================
 # FLASK APP FACTORY
@@ -220,7 +263,18 @@ def create_app() -> Flask:
     # ===== OTHER ROUTES =====
     @app.route("/events")
     def events():
-        return render_template("events.html")
+        return render_template("events.html", events=EVENTS)
+    @app.route("/api/events/<event_id>")
+    def api_event_details(event_id):
+        event = EVENTS.get(event_id)
+        if not event:
+            return jsonify({"error": "Event not found"}), 404
+
+        # Convert image path into a real static URL
+        event_out = dict(event)
+        event_out["image_url"] = url_for("static", filename=event["image"])
+        return jsonify(event_out)
+
 
     @app.route("/concert-map")
     def concert_map():

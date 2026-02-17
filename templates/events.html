@@ -15,51 +15,112 @@
       <div class="logo">pulse</div>
       <p class="subtitle">Events</p>
     </header>
-    <section class="card">
-      <h2>Explore Events and Concerts</h2>
-      <!-- Concert Map Button -->
-      <a class="btn btn-primary w-full" href="{{ url_for('concert_map') }}">Concert Map</a>
-      <div class="list" style="margin-top: 8px;">
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <div class="event-card">
-          <img src="{{ url_for('static', filename='images/placeholder_caser.png') }}" alt="Event 1" class="event-pic">
-          <h3>Daniel Ceasar Concert</h3>
-          <div class="event-date-location">
-            <p>Date: 11/23/2025</p>
-            <p>Location: So-Fi Stadium</p>
-          </div>
-          <p class="event-description">Come experience Daniel Ceasar's newest album LIVE at SoFi Stadium</p>
-          <button class="btn btn-primary w-full"
-            onclick="openModal('Daniel Ceasar Concert', 'So-Fi Stadium', '11/23/2025')">
-            View Details
-          </button>
-        </div>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <div class="event-card">
-          <img src="{{ url_for('static', filename='images/placeholder_flawed.jpg') }}" alt="Event 2" class="event-pic">
-          <h3>Flawed Mangoes Debut Show</h3>
-          <div class="event-date-location">
-            <p>Date: 9/28/2025</p>
-            <p>Location: EchoPlex</p>
-          </div>
-          <p class="event-description">Up and comer artist Flawed Mangoes has his first live show at Echo Plex</p>
-          <a class="btn btn-primary w-full">View Details</a>
-        </div>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <div class="event-card">
-          <img src="{{ url_for('static', filename='images/placeholder_benson.jpg') }}" alt="Event 3" class="event-pic">
-          <h3>Benson Boone World Tour</h3>
-          <div class="event-date-location">
-            <p>Date: 12/25/2025</p>
-            <p>Location: Youtube Stadium</p>
-          </div>
-          <p class="event-description">Benson Boone makes his long awaited return to LA for his world tour. </p>
-          <a class="btn btn-primary w-full">View Details</a>
-        </div>
-        <!-- ================================================================== -->
+   <div class="list" style="margin-top: 8px;">
+  {% for event_id, e in events.items() %}
+    <div class="event-card">
+      <img src="{{ url_for('static', filename=e.image) }}" alt="{{ e.title }}" class="event-pic">
+      <h3>{{ e.title }}</h3>
+
+      <div class="event-date-location">
+        <p>Date: {{ e.date }}</p>
+        <p>Location: {{ e.location }}</p>
       </div>
-      <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
-    </section>
+
+      <p class="event-description">{{ e.description }}</p>
+
+      <button class="btn btn-primary w-full" onclick="openEventModal('{{ event_id }}')">
+        View Details
+      </button>
+    </div>
+  {% endfor %}
+</div>
+  <!-- =======================
+     EVENT DETAILS MODAL
+======================= -->
+<div id="event-modal-overlay" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
+  align-items:center; justify-content:center; padding:16px; z-index:9999;
+">
+  <div class="card" style="max-width:520px; width:100%; position:relative;">
+    <button class="btn btn-ghost" style="position:absolute; top:12px; right:12px;" onclick="closeEventModal()">
+      ✕
+    </button>
+
+    <img id="modal-image" src="" alt="Event Image" class="event-pic" style="width:100%; height:auto; border-radius:12px;">
+
+    <h2 id="modal-title" style="margin-top:12px;"></h2>
+    <p id="modal-meta" style="opacity:0.9;"></p>
+    <p id="modal-description"></p>
+
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+      <a id="modal-tickets" class="btn btn-primary" href="#" target="_blank" rel="noopener">Get Tickets</a>
+      <a id="modal-instagram" class="btn btn-ghost" href="#" target="_blank" rel="noopener">Instagram</a>
+      <a id="modal-spotify" class="btn btn-ghost" href="#" target="_blank" rel="noopener">Spotify</a>
+    </div>
+  </div>
+</div>
+  <script>
+  const overlay = document.getElementById("event-modal-overlay");
+  const modalImage = document.getElementById("modal-image");
+  const modalTitle = document.getElementById("modal-title");
+  const modalMeta = document.getElementById("modal-meta");
+  const modalDescription = document.getElementById("modal-description");
+
+  const ticketsBtn = document.getElementById("modal-tickets");
+  const igBtn = document.getElementById("modal-instagram");
+  const spotifyBtn = document.getElementById("modal-spotify");
+
+  function closeEventModal() {
+    overlay.style.display = "none";
+  }
+
+  // close on outside click
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) closeEventModal();
+  });
+
+  async function openEventModal(eventId) {
+    // show overlay immediately (nice UX)
+    overlay.style.display = "flex";
+
+    // loading placeholders
+    modalTitle.textContent = "Loading...";
+    modalMeta.textContent = "";
+    modalDescription.textContent = "";
+    modalImage.src = "";
+
+    try {
+      const res = await fetch(`/api/events/${eventId}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Failed to load event");
+
+      modalImage.src = data.image_url;
+      modalTitle.textContent = data.title;
+      modalMeta.textContent = `${data.date} • ${data.location}`;
+      modalDescription.textContent = data.description;
+
+      ticketsBtn.href = data.ticket_url || "#";
+      igBtn.href = (data.socials && data.socials.instagram) ? data.socials.instagram : "#";
+      spotifyBtn.href = (data.socials && data.socials.spotify) ? data.socials.spotify : "#";
+
+      // disable buttons if missing
+      ticketsBtn.style.pointerEvents = data.ticket_url ? "auto" : "none";
+      ticketsBtn.style.opacity = data.ticket_url ? "1" : "0.5";
+
+      igBtn.style.pointerEvents = (data.socials && data.socials.instagram) ? "auto" : "none";
+      igBtn.style.opacity = (data.socials && data.socials.instagram) ? "1" : "0.5";
+
+      spotifyBtn.style.pointerEvents = (data.socials && data.socials.spotify) ? "auto" : "none";
+      spotifyBtn.style.opacity = (data.socials && data.socials.spotify) ? "1" : "0.5";
+
+    } catch (err) {
+      modalTitle.textContent = "Couldn’t load event details";
+      modalDescription.textContent = err.message;
+    }
+  }
+</script>
+
   </main>
 </body>
 
