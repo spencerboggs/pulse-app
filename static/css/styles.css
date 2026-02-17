@@ -887,8 +887,8 @@ input[type="password"] {
 }
 
 .chat-message.user-message {
+  /* make it aligned right int he div */
   justify-content: flex-end;
-  flex-direction: row-reverse;
 }
 
 .message-avatar {
