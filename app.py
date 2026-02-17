@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os, re, requests
+from werkzeug.utils import secure_filename
 
 # ============================================================
 # ENVIRONMENT LOADING
@@ -14,6 +15,8 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
 
 # ============================================================
 # FLASK APP FACTORY
@@ -46,9 +49,8 @@ def create_app() -> Flask:
         images = [f for f in os.listdir(uploads_path) if f.lower().endswith(exts)]
         if images:
             latest = max(images, key=lambda f: os.path.getmtime(os.path.join(uploads_path, f)))
-            return url_for("static", filename=f"uploads/{latest}")
+            return url_for("static", filename="images/profile_placeholder.png")
 
-        return url_for("static", filename="images/profile_placeholder.png")
 
     # ============================================================
     # ROUTES
@@ -158,6 +160,49 @@ def create_app() -> Flask:
             img_url=img_url,
             display_name=session["username"]
         )
+    ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
+
+    def allowed_image(filename: str) -> bool:
+        return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTS
+
+#Used to Change PFP
+    @app.route("/profile/upload-picture", methods=["POST"])
+    def upload_profile_picture():
+        if "user_id" not in session:
+            return redirect(url_for("auth"))
+
+        if "profile_picture" not in request.files:
+            flash("No file selected.", "error")
+            return redirect(url_for("profile"))
+
+        file = request.files["profile_picture"]
+
+        if not file or file.filename == "":
+            flash("No file selected.", "error")
+            return redirect(url_for("profile"))
+
+        if not allowed_image(file.filename):
+            flash("Please upload a PNG, JPG, JPEG, WEBP, or GIF image.", "error")
+            return redirect(url_for("profile"))
+
+        slug = slugify(session["username"])
+        ext = file.filename.rsplit(".", 1)[1].lower()
+
+        uploads_path = os.path.join(app.static_folder, "uploads")
+        os.makedirs(uploads_path, exist_ok=True)
+
+    
+        for old_ext in ALLOWED_IMAGE_EXTS:
+            old_path = os.path.join(uploads_path, f"{slug}.{old_ext}")
+            if os.path.exists(old_path):
+                os.remove(old_path)
+
+        filename = secure_filename(f"{slug}.{ext}")
+        save_path = os.path.join(uploads_path, filename)
+        file.save(save_path)
+
+        flash("Profile picture updated!", "success")
+        return redirect(url_for("profile"))
 
 
     @app.route("/u/<path:username>")
