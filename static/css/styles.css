@@ -853,3 +853,221 @@ input[type="password"] {
   font-size: .82rem;
   color: rgba(0, 0, 0, 0.3);
 }
+
+/* ============================================================
+   CHATBOT INTERFACE
+   ============================================================ */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(11, 29, 58, 0.85);
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-message {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.chat-message.bot-message {
+  justify-content: flex-start;
+}
+
+.chat-message.user-message {
+  justify-content: flex-end;
+  flex-direction: row-reverse;
+}
+
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.bot-message .message-avatar {
+  background: rgba(255, 246, 215, 0.15);
+  color: var(--fg);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-message .message-avatar {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.message-content {
+  max-width: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-message .message-content {
+  align-items: flex-end;
+}
+
+.bot-message .message-content {
+  align-items: flex-start;
+}
+
+.message-bubble {
+  padding: 10px 14px;
+  border-radius: 16px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.bot-message .message-bubble {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fg);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top-left-radius: 4px;
+}
+
+.user-message .message-bubble {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-top-right-radius: 4px;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.chat-input-container {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(11, 29, 58, 0.95);
+}
+
+.chat-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.95rem;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.chat-input-container .btn {
+  padding: 10px 20px;
+}
+
+/* ============================================================
+   ONBOARDING QUIZ
+   ============================================================ */
+.quiz-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.quiz-question {
+  background: rgba(11, 29, 58, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.quiz-question h3 {
+  margin: 0 0 16px;
+  color: var(--fg);
+  font-size: 1.2rem;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quiz-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+
+.quiz-option input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.quiz-option label {
+  flex: 1;
+  cursor: pointer;
+  color: var(--fg);
+  font-size: 0.95rem;
+}
+
+.quiz-option input[type="radio"]:checked ~ label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Selected option styling - using JavaScript fallback for better browser support */
+.quiz-option.selected {
+  border-color: var(--accent);
+  background: rgba(255, 150, 29, 0.1);
+}
+
+.quiz-option.selected label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.quiz-progress {
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.quiz-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 24px;
+}

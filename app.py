@@ -1,19 +1,20 @@
 from flask import Flask, render_template, redirect, url_for, request, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from supabase import create_client, Client
-from dotenv import load_dotenv
+# Supabase and dotenv imports commented out for testing without dependencies
+# from supabase import create_client, Client
+# from dotenv import load_dotenv
 import os, re, requests
 
 # ============================================================
 # ENVIRONMENT LOADING
 # ============================================================
 
-load_dotenv()
+# load_dotenv()  # Commented out - not needed for testing
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# SUPABASE_URL = os.getenv("SUPABASE_URL")
+# SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)  # Commented out - not needed for testing
 
 # ============================================================
 # FLASK APP FACTORY
@@ -56,7 +57,7 @@ def create_app() -> Flask:
 
     @app.route("/")
     def index():
-        return redirect(url_for("auth"))
+        return redirect(url_for("home"))
 
     # ===== AUTH PAGE (shows login + signup forms) =====
     @app.route("/auth")
@@ -78,29 +79,34 @@ def create_app() -> Flask:
             flash("Passwords do not match.", "error")
             return redirect(url_for("auth"))
 
-        # Check if username or email exists
-        existing = supabase.table("users") \
-            .select("id") \
-            .or_(f"username.eq.{username},email.eq.{email}") \
-            .execute()
+        # Supabase code commented out for testing
+        # # Check if username or email exists
+        # existing = supabase.table("users") \
+        #     .select("id") \
+        #     .or_(f"username.eq.{username},email.eq.{email}") \
+        #     .execute()
+        # 
+        # if existing.data:
+        #     flash("Username or email already exists.", "error")
+        #     return redirect(url_for("auth"))
+        # 
+        # password_hash = generate_password_hash(password)
+        # 
+        # result = supabase.table("users").insert({
+        #     "username": username,
+        #     "email": email,
+        #     "password_hash": password_hash
+        # }).execute()
+        # 
+        # user = result.data[0]
+        # 
+        # # Login user
+        # session["user_id"] = user["id"]
+        # session["username"] = user["username"]
 
-        if existing.data:
-            flash("Username or email already exists.", "error")
-            return redirect(url_for("auth"))
-
-        password_hash = generate_password_hash(password)
-
-        result = supabase.table("users").insert({
-            "username": username,
-            "email": email,
-            "password_hash": password_hash
-        }).execute()
-
-        user = result.data[0]
-
-        # Login user
-        session["user_id"] = user["id"]
-        session["username"] = user["username"]
+        # Placeholder: Set session for testing without database
+        session["user_id"] = "test_user_123"
+        session["username"] = username
 
         return redirect(url_for("home"))
 
@@ -111,20 +117,25 @@ def create_app() -> Flask:
         identity = request.form["identity"]
         password = request.form["password"]
 
-        query = supabase.table("users") \
-            .select("*") \
-            .or_(f"username.eq.{identity},email.eq.{identity}") \
-            .limit(1) \
-            .execute()
+        # Supabase code commented out for testing
+        # query = supabase.table("users") \
+        #     .select("*") \
+        #     .or_(f"username.eq.{identity},email.eq.{identity}") \
+        #     .limit(1) \
+        #     .execute()
+        # 
+        # user = query.data[0] if query.data else None
+        # 
+        # if not user or not check_password_hash(user["password_hash"], password):
+        #     flash("Invalid credentials.", "error")
+        #     return redirect(url_for("auth"))
+        # 
+        # session["user_id"] = user["id"]
+        # session["username"] = user["username"]
 
-        user = query.data[0] if query.data else None
-
-        if not user or not check_password_hash(user["password_hash"], password):
-            flash("Invalid credentials.", "error")
-            return redirect(url_for("auth"))
-
-        session["user_id"] = user["id"]
-        session["username"] = user["username"]
+        # Placeholder: Set session for testing without database
+        session["user_id"] = "test_user_123"
+        session["username"] = identity if identity else "test_user"
 
         return redirect(url_for("home"))
 
@@ -138,25 +149,29 @@ def create_app() -> Flask:
     # ===== HOME =====
     @app.route("/home")
     def home():
-        if "user_id" not in session:
-            return redirect(url_for("auth"))
+        # Auth check disabled for development - re-enable when Supabase is configured
+        # if "user_id" not in session:
+        #     return redirect(url_for("auth"))
 
-        return render_template("home.html", username=session["username"])
+        username = session.get("username", "Guest")
+        return render_template("home.html", username=username)
 
 
     # ===== PROFILE =====
     @app.route("/profile")
     def profile():
-        if "user_id" not in session:
-            return redirect(url_for("auth"))
+        # Auth check disabled for development - re-enable when Supabase is configured
+        # if "user_id" not in session:
+        #     return redirect(url_for("auth"))
 
-        slug = slugify(session["username"])
+        username = session.get("username", "Guest")
+        slug = slugify(username)
         img_url = pick_user_image_by_slug(slug)
 
         return render_template(
             "profile.html",
             img_url=img_url,
-            display_name=session["username"]
+            display_name=username
         )
 
 
@@ -169,8 +184,10 @@ def create_app() -> Flask:
     # ===== TEST ROUTE (Optional) =====
     @app.route("/test_supabase")
     def test_supabase():
-        data = supabase.table("profiles").select("*").execute()
-        return {"data": data.data, "error": data.error}
+        # Supabase code commented out for testing
+        # data = supabase.table("profiles").select("*").execute()
+        # return {"data": data.data, "error": data.error}
+        return {"data": [], "error": "Supabase not configured - test route disabled"}
 
     # ===== OTHER ROUTES =====
     @app.route("/events")
@@ -183,6 +200,9 @@ def create_app() -> Flask:
 
     @app.route("/settings")
     def settings():
+        # Auth check disabled for development - re-enable when Supabase is configured
+        # if "user_id" not in session:
+        #     return redirect(url_for("auth"))
         return render_template("settings.html")
 
     @app.route("/weekly-insights")
@@ -204,6 +224,20 @@ def create_app() -> Flask:
     @app.route("/report")
     def report():
         return render_template("report.html")
+
+    @app.route("/chatbot")
+    def chatbot():
+        # Auth check disabled for development - re-enable when Supabase is configured
+        # if "user_id" not in session:
+        #     return redirect(url_for("auth"))
+        return render_template("chatbot.html")
+
+    @app.route("/onboarding-quiz")
+    def onboarding_quiz():
+        # Auth check disabled for development - re-enable when Supabase is configured
+        # if "user_id" not in session:
+        #     return redirect(url_for("auth"))
+        return render_template("onboarding_quiz.html")
 
 
     # ===== Spotify Retrieval =====

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse - Chatbot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <main class="container">
+    <header class="brand">
+      <div class="logo">Pulse</div>
+      <p class="subtitle">Chatbot Assistant</p>
+    </header>
+
+    <section class="card">
+      <h2>Chat with Pulse Assistant</h2>
+      <p style="margin-bottom: 16px;">Ask me about music, events, matchmaking, or anything else!</p>
+
+      <!-- Chat interface wireframe -->
+      <div class="chat-container" id="chatContainer">
+        <div class="chat-messages" id="chatMessages">
+          <!-- Initial bot greeting message -->
+          <div class="chat-message bot-message">
+            <div class="message-avatar">P</div>
+            <div class="message-content">
+              <div class="message-bubble">Hi! I'm your Pulse assistant. I can help you with music recommendations, event information, matchmaking questions, and more. What would you like to know?</div>
+              <div class="message-time">Just now</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat input area -->
+        <div class="chat-input-container">
+          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." autocomplete="off" />
+          <button id="sendButton" class="btn btn-primary">Send</button>
+        </div>
+      </div>
+
+      <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+</body>
+
+</html>

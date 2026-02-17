@@ -18,6 +18,8 @@
     </header>
     <section class="card">
       <h2>Settings</h2>
+
+      <!-- Notification preferences - will connect to user_settings table -->
       <h3 style="margin-top: 10px;">Notifications</h3>
       <div class="toggle-row" style="margin: 8px 0 12px;">
         <label class="chip-toggle">
@@ -28,8 +30,131 @@
           <input type="checkbox" id="notif-push" />
           <span class="chip">Push Notifications</span>
         </label>
+        <label class="chip-toggle">
+          <input type="checkbox" id="notif-matchmaking" />
+          <span class="chip">Matchmaking Alerts</span>
+        </label>
+        <label class="chip-toggle">
+          <input type="checkbox" id="notif-events" />
+          <span class="chip">Event Reminders</span>
+        </label>
+        <label class="chip-toggle">
+          <input type="checkbox" id="notif-messages" />
+          <span class="chip">New Messages</span>
+        </label>
+        <label class="chip-toggle">
+          <input type="checkbox" id="notif-insights" />
+          <span class="chip">Weekly Insights</span>
+        </label>
       </div>
 
+      <!-- Profile settings - will sync with user profile data -->
+      <h3>Profile</h3>
+      <div class="list">
+        <a class="row-link" href="{{ url_for('profile') }}">
+          <span class="row-label">Edit Profile</span>
+          <span class="row-chevron"></span>
+        </a>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="profile-public" />
+          <span class="chip">Public Profile</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="profile-music-sync" />
+          <span class="chip">Auto-sync Music Taste</span>
+        </label>
+      </div>
+
+      <!-- Matchmaking preferences - will connect to matchmaking_settings table -->
+      <h3>Matchmaking</h3>
+      <div class="list">
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="matchmaking-enabled" />
+          <span class="chip">Enable Matchmaking</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="matchmaking-distance" />
+          <span class="chip">Show Distance</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="matchmaking-music-priority" />
+          <span class="chip">Prioritize Music Compatibility</span>
+        </label>
+      </div>
+
+      <!-- Events settings - will connect to event_preferences table -->
+      <h3>Events</h3>
+      <div class="list">
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="events-notifications" />
+          <span class="chip">Event Notifications</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="events-concert-map" />
+          <span class="chip">Show on Concert Map</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="events-auto-rsvp" />
+          <span class="chip">Auto-RSVP to Suggested Events</span>
+        </label>
+      </div>
+
+      <!-- Messages settings - will connect to messaging_settings table -->
+      <h3>Messages</h3>
+      <div class="list">
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="messages-read-receipts" />
+          <span class="chip">Read Receipts</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="messages-typing-indicators" />
+          <span class="chip">Typing Indicators</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="messages-filter-requests" />
+          <span class="chip">Filter Message Requests</span>
+        </label>
+      </div>
+
+      <!-- Weekly Insights preferences - will connect to insights_settings table -->
+      <h3>Weekly Insights</h3>
+      <div class="list">
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="insights-enabled" />
+          <span class="chip">Enable Weekly Insights</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="insights-artist-news" />
+          <span class="chip">Artist News & Updates</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="insights-tour-alerts" />
+          <span class="chip">Tour & Concert Alerts</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="insights-collaborations" />
+          <span class="chip">Collaboration Announcements</span>
+        </label>
+      </div>
+
+      <!-- Display preferences - will connect to user_preferences table -->
+      <h3>Display</h3>
+      <div class="list">
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="display-dark-mode" />
+          <span class="chip">Dark Mode</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="display-compact-view" />
+          <span class="chip">Compact View</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="display-animations" />
+          <span class="chip">Enable Animations</span>
+        </label>
+      </div>
+
+      <!-- Privacy settings - will connect to privacy_settings table -->
       <h3>Privacy</h3>
       <div class="list">
         <a class="row-link" href="{{ url_for('blocked_accounts') }}">
@@ -40,17 +165,75 @@
           <span class="row-label">Report a Problem</span>
           <span class="row-chevron"></span>
         </a>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="privacy-profile-visible" />
+          <span class="chip">Profile Visible to Others</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="privacy-music-public" />
+          <span class="chip">Make Music Taste Public</span>
+        </label>
+        <label class="chip-toggle" style="margin: 8px 0;">
+          <input type="checkbox" id="privacy-location-sharing" />
+          <span class="chip">Share Location for Events</span>
+        </label>
       </div>
 
+      <!-- Account management - will connect to users table -->
       <h3>Account</h3>
       <div class="grid-2">
-        <button class="btn btn-ghost w-full">Log Out</button>
-        <button class="btn btn-primary w-full">Delete Account</button>
+        <button class="btn btn-ghost w-full" id="btn-logout">Log Out</button>
+        <button class="btn btn-primary w-full" id="btn-delete-account">Delete Account</button>
       </div>
     </section>
 
     <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
   </main>
+
+  <script>
+    // Settings persistence - will be replaced with database backend
+    // TODO: Connect to Supabase user_settings table to save/load preferences
+    
+    // Load saved settings from localStorage (temporary until backend is connected)
+    function loadSettings() {
+      const settings = JSON.parse(localStorage.getItem('pulse_settings') || '{}');
+      Object.keys(settings).forEach(key => {
+        const checkbox = document.getElementById(key);
+        if (checkbox) checkbox.checked = settings[key];
+      });
+    }
+
+    // Save settings to localStorage (temporary until backend is connected)
+    function saveSettings() {
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+      const settings = {};
+      checkboxes.forEach(cb => {
+        settings[cb.id] = cb.checked;
+      });
+      localStorage.setItem('pulse_settings', JSON.stringify(settings));
+    }
+
+    // Auto-save on change
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', saveSettings);
+    });
+
+    // Load settings on page load
+    loadSettings();
+
+    // Account actions - will connect to auth endpoints
+    document.getElementById('btn-logout')?.addEventListener('click', () => {
+      // TODO: Call /logout endpoint when auth is enabled
+      window.location.href = "{{ url_for('auth') }}";
+    });
+
+    document.getElementById('btn-delete-account')?.addEventListener('click', () => {
+      // TODO: Call delete account endpoint with confirmation
+      if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        alert('Account deletion will be implemented with backend connection');
+      }
+    });
+  </script>
 </body>
 
 </html>

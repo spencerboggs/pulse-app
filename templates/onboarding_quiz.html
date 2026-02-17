@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse - Onboarding Quiz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <main class="container">
+    <header class="brand">
+      <div class="logo">Pulse</div>
+      <p class="subtitle">Onboarding Quiz</p>
+    </header>
+
+    <section class="card">
+      <h2>Welcome to Pulse!</h2>
+      <p style="margin-bottom: 20px;">Help us get to know your music taste so we can match you with the right people and events.</p>
+
+      <form id="onboardingQuiz" class="quiz-container">
+        <!-- Question 1: Favorite Genre -->
+        <div class="quiz-question" data-question="1">
+          <h3>What's your favorite music genre?</h3>
+          <div class="quiz-options">
+            <div class="quiz-option">
+              <input type="radio" id="genre-hiphop" name="favorite_genre" value="hip_hop" />
+              <label for="genre-hiphop">Hip Hop / Rap</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="genre-pop" name="favorite_genre" value="pop" />
+              <label for="genre-pop">Pop</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="genre-rock" name="favorite_genre" value="rock" />
+              <label for="genre-rock">Rock</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="genre-rnb" name="favorite_genre" value="r_b" />
+              <label for="genre-rnb">R&B / Soul</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="genre-electronic" name="favorite_genre" value="electronic" />
+              <label for="genre-electronic">Electronic / EDM</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="genre-indie" name="favorite_genre" value="indie" />
+              <label for="genre-indie">Indie / Alternative</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="genre-jazz" name="favorite_genre" value="jazz" />
+              <label for="genre-jazz">Jazz</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="genre-other" name="favorite_genre" value="other" />
+              <label for="genre-other">Other</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 2: Listening Frequency -->
+        <div class="quiz-question" data-question="2">
+          <h3>How often do you listen to music?</h3>
+          <div class="quiz-options">
+            <div class="quiz-option">
+              <input type="radio" id="freq-daily" name="listening_frequency" value="daily" />
+              <label for="freq-daily">Every day, multiple times</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="freq-regular" name="listening_frequency" value="regular" />
+              <label for="freq-regular">Most days</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="freq-weekly" name="listening_frequency" value="weekly" />
+              <label for="freq-weekly">A few times a week</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="freq-occasional" name="listening_frequency" value="occasional" />
+              <label for="freq-occasional">Occasionally</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 3: Concert Experience -->
+        <div class="quiz-question" data-question="3">
+          <h3>How often do you attend concerts or live shows?</h3>
+          <div class="quiz-options">
+            <div class="quiz-option">
+              <input type="radio" id="concerts-monthly" name="concert_frequency" value="monthly" />
+              <label for="concerts-monthly">Multiple times per month</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="concerts-occasional" name="concert_frequency" value="occasional" />
+              <label for="concerts-occasional">A few times per year</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="concerts-rarely" name="concert_frequency" value="rarely" />
+              <label for="concerts-rarely">Rarely</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="concerts-never" name="concert_frequency" value="never" />
+              <label for="concerts-never">Never, but interested</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 4: Music Discovery -->
+        <div class="quiz-question" data-question="4">
+          <h3>How do you typically discover new music?</h3>
+          <div class="quiz-options">
+            <div class="quiz-option">
+              <input type="radio" id="discover-streaming" name="music_discovery" value="streaming" />
+              <label for="discover-streaming">Streaming service recommendations</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="discover-friends" name="music_discovery" value="friends" />
+              <label for="discover-friends">Friends and social connections</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="discover-social" name="music_discovery" value="social" />
+              <label for="discover-social">Social media and online communities</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="discover-radio" name="music_discovery" value="radio" />
+              <label for="discover-radio">Radio or music blogs</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="discover-explore" name="music_discovery" value="explore" />
+              <label for="discover-explore">I actively explore and search</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 5: Matchmaking Preference -->
+        <div class="quiz-question" data-question="5">
+          <h3>What's most important when connecting with people on Pulse?</h3>
+          <div class="quiz-options">
+            <div class="quiz-option">
+              <input type="radio" id="match-music" name="matchmaking_priority" value="music_taste" />
+              <label for="match-music">Similar music taste</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="match-location" name="matchmaking_priority" value="location" />
+              <label for="match-location">Same location or area</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="match-events" name="matchmaking_priority" value="events" />
+              <label for="match-events">Interest in similar events</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="match-all" name="matchmaking_priority" value="all" />
+              <label for="match-all">All of the above</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Question 6: Spotify Integration -->
+        <div class="quiz-question" data-question="6">
+          <h3>Would you like to connect your Spotify account?</h3>
+          <div class="quiz-options">
+            <div class="quiz-option">
+              <input type="radio" id="spotify-yes" name="spotify_integration" value="yes" />
+              <label for="spotify-yes">Yes, connect my Spotify</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="spotify-later" name="spotify_integration" value="later" />
+              <label for="spotify-later">Maybe later</label>
+            </div>
+            <div class="quiz-option">
+              <input type="radio" id="spotify-no" name="spotify_integration" value="no" />
+              <label for="spotify-no">No, I'll add music manually</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz Actions -->
+        <div class="quiz-actions">
+          <button type="button" class="btn btn-ghost" id="btn-skip">Skip for Now</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit">Complete Quiz</button>
+        </div>
+      </form>
+
+      <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+    </section>
+  </main>
+
+  <script>
+    // Onboarding quiz submission handler - will connect to backend
+    // TODO: Connect to Supabase to save quiz responses to user_preferences or onboarding_responses table
+    
+    const quizForm = document.getElementById('onboardingQuiz');
+    const submitBtn = document.getElementById('btn-submit');
+    const skipBtn = document.getElementById('btn-skip');
+
+    // Track quiz progress
+    function updateProgress() {
+      const questions = document.querySelectorAll('.quiz-question');
+      const answered = Array.from(questions).filter(q => {
+        const name = q.querySelector('input[type="radio"]')?.name;
+        return name && document.querySelector(`input[name="${name}"]:checked`);
+      }).length;
+      
+      // Could display progress indicator here
+      console.log(`Progress: ${answered}/${questions.length} questions answered`);
+    }
+
+    // Update progress and styling on any radio change
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        updateProgress();
+        
+        // Update selected styling for better visual feedback
+        const question = e.target.closest('.quiz-question');
+        question.querySelectorAll('.quiz-option').forEach(opt => {
+          opt.classList.remove('selected');
+        });
+        e.target.closest('.quiz-option')?.classList.add('selected');
+      });
+    });
+
+    // Handle form submission
+    quizForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(quizForm);
+      const responses = {};
+      
+      // Collect all responses
+      for (const [key, value] of formData.entries()) {
+        responses[key] = value;
+      }
+
+      // TODO: Send to backend API endpoint
+      // Example: fetch('/api/onboarding/submit', { method: 'POST', body: JSON.stringify(responses) })
+      
+      console.log('Quiz responses:', responses);
+      alert('Quiz completed! Your preferences have been saved. (Backend integration pending)');
+      
+      // Redirect to home or profile setup
+      window.location.href = "{{ url_for('home') }}";
+    });
+
+    // Skip button handler
+    skipBtn.addEventListener('click', () => {
+      if (confirm('Skip the onboarding quiz? You can complete it later in settings.')) {
+        window.location.href = "{{ url_for('home') }}";
+      }
+    });
+
+    // Initial progress check
+    updateProgress();
+  </script>
+</body>
+
+</html>
