@@ -3,7 +3,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os, re, requests
-from werkzeug.utils import secure_filename
 
 # ============================================================
 # ENVIRONMENT LOADING
@@ -12,11 +11,10 @@ from werkzeug.utils import secure_filename
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")	
+
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-
 
 # ============================================================
 # FLASK APP FACTORY
@@ -49,8 +47,9 @@ def create_app() -> Flask:
         images = [f for f in os.listdir(uploads_path) if f.lower().endswith(exts)]
         if images:
             latest = max(images, key=lambda f: os.path.getmtime(os.path.join(uploads_path, f)))
-            return url_for("static", filename="images/profile_placeholder.png")
+            return url_for("static", filename=f"uploads/{latest}")
 
+        return url_for("static", filename="images/profile_placeholder.png")
 
     # ============================================================
     # ROUTES
@@ -106,6 +105,7 @@ def create_app() -> Flask:
 
         return redirect(url_for("home"))
 
+
     # ===== LOGIN =====
     @app.route("/login", methods=["POST"])
     def login():
@@ -129,6 +129,7 @@ def create_app() -> Flask:
 
         return redirect(url_for("home"))
 
+
     # ===== LOGOUT =====
     @app.route("/logout")
     def logout():
@@ -142,6 +143,7 @@ def create_app() -> Flask:
             return redirect(url_for("auth"))
 
         return render_template("home.html", username=session["username"])
+
 
     # ===== PROFILE =====
     @app.route("/profile")
@@ -157,86 +159,13 @@ def create_app() -> Flask:
             img_url=img_url,
             display_name=session["username"]
         )
-    ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
 
-    def allowed_image(filename: str) -> bool:
-        return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTS
-
-#Used to Change PFP
-    @app.route("/profile/upload-picture", methods=["POST"])
-    def upload_profile_picture():
-        if "user_id" not in session:
-            return redirect(url_for("auth"))
-
-        if "profile_picture" not in request.files:
-            flash("No file selected.", "error")
-            return redirect(url_for("profile"))
-
-        file = request.files["profile_picture"]
-
-        if not file or file.filename == "":
-            flash("No file selected.", "error")
-            return redirect(url_for("profile"))
-
-        if not allowed_image(file.filename):
-            flash("Please upload a PNG, JPG, JPEG, WEBP, or GIF image.", "error")
-            return redirect(url_for("profile"))
-
-        slug = slugify(session["username"])
-        ext = file.filename.rsplit(".", 1)[1].lower()
-
-        uploads_path = os.path.join(app.static_folder, "uploads")
-        os.makedirs(uploads_path, exist_ok=True)
-
-    
-        for old_ext in ALLOWED_IMAGE_EXTS:
-            old_path = os.path.join(uploads_path, f"{slug}.{old_ext}")
-            if os.path.exists(old_path):
-                os.remove(old_path)
-
-        filename = secure_filename(f"{slug}.{ext}")
-        save_path = os.path.join(uploads_path, filename)
-        file.save(save_path)
-
-        flash("Profile picture updated!", "success")
-        return redirect(url_for("profile"))
 
     @app.route("/u/<path:username>")
     def user_profile(username):
         slug = slugify(username)
         img_url = pick_user_image_by_slug(slug)
         return render_template("profile_view.html", img_url=img_url, display_name=username)
-
-    # ===== SEARCH USERS (Matchmaking Search) =====
-    @app.get("/search_users")
-    def search_users():
-        if "user_id" not in session:
-            return jsonify({"users": []})
-
-        q = (request.args.get("q") or "").strip()
-        if not q:
-            return jsonify({"users": []})
-
-        result = supabase.table("users") \
-            .select("id, username, email") \
-            .or_(f"username.ilike.%{q}%,email.ilike.%{q}%") \
-            .limit(20) \
-            .execute()
-
-        users = []
-        for u in (result.data or []):
-            if u.get("id") == session.get("user_id"):
-                continue
-
-            username = u.get("username") or ""
-            users.append({
-                "id": u.get("id"),
-                "username": username,
-                "name": username,
-                "handle": f"@{username}" if username else ""
-            })
-
-        return jsonify({"users": users})
 
     # ===== TEST ROUTE (Optional) =====
     @app.route("/test_supabase")
@@ -277,6 +206,7 @@ def create_app() -> Flask:
     def report():
         return render_template("report.html")
 
+
     # ===== Spotify Retrieval =====
     @app.route("/spotify/test-top-artists")
     def spotify_test_top_artists():
@@ -304,7 +234,14 @@ def create_app() -> Flask:
 
         return jsonify(artists)
 
+
+
     return app
+
+
+
+
+
 
 app = create_app()
 
