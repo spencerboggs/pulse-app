@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import os, re, requests
 from werkzeug.utils import secure_filename
 
+
 # ============================================================
 # ENVIRONMENT LOADING
 # ============================================================
@@ -212,11 +213,14 @@ def create_app() -> Flask:
         username = session.get("username", "Guest")
         slug = slugify(username)
         img_url = pick_user_image_by_slug(slug)
-
+        favorite_ids = session.get("favorite_insights", [])
+        followed_insights = [item for item in WEEKLY_INSIGHTS if item["id"] in favorite_ids]
         return render_template(
             "profile.html",
             img_url=img_url,
-            display_name=username
+            display_name=username,
+            followed_insights=followed_insights
+
         )
     ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
 
@@ -304,10 +308,55 @@ def create_app() -> Flask:
         #     return redirect(url_for("auth"))
         return render_template("settings.html")
 
+    WEEKLY_INSIGHTS = [
+    {
+        "id": "drake-collab",
+        "title": "Lebron James teases collab with hit Pop Star Drake",
+        "summary": "NBA Star Lebron James posted a 10-second clip with Drake in the background. Fans expect a TikTok dance challenge to drop alongside the track.",
+        "badges": ["Collaboration", "Teaser"],
+        "date": "Nov 3"
+    },
+    {
+        "id": "lofi-tour",
+        "title": "Lo-Fi Collective announces West Coast mini-tour",
+        "summary": "Six intimate shows with vinyl pop-ups and beat-making workshops. Los Angeles kickoff rumored to feature surprise guests.",
+        "badges": ["Tour", "Workshop"],
+        "date": "Nov 7"
+    },
+    {
+        "id": "mariah-rumor",
+        "title": "Mariah Carey starts to defrost ahead of Christmas",
+        "summary": "Producers spotted together in the studio as well as a sizeable amount of water being found in her Los Angeles mansion.",
+        "badges": ["New Song", "Rumor"],
+        "date": "Dec 25"
+    }
+]
+
     @app.route("/weekly-insights")
     def weekly_insights():
-        return render_template("weekly_insights.html")
+        favorites = session.get("favorite_insights", [])
 
+        insights = []
+        for item in WEEKLY_INSIGHTS:
+            insight = dict(item)
+            insight["is_favorited"] = item["id"] in favorites
+            insights.append(insight)
+
+        return render_template("weekly_insights.html", insights=insights)
+    
+    @app.route("/weekly-insights/favorite/<insight_id>", methods=["POST"])
+    def toggle_favorite_insight(insight_id):
+        favorites = session.get("favorite_insights", [])
+
+        if insight_id in favorites:
+            favorites.remove(insight_id)
+            flash("Removed from following.", "info")
+        else:
+            favorites.append(insight_id)
+            flash("Added to following.", "success")
+
+        session["favorite_insights"] = favorites
+        return redirect(url_for("weekly_insights"))
     @app.route("/matchmaking")
     def matchmaking():
         return render_template("matchmaking.html")
