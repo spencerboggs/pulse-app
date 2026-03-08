@@ -216,3 +216,17 @@ __marimo__/
 .envT
 venv/
 __pycache__/
+
+.DS_Store
+.env
+.env.save
+.envT
+venv/
+__pycache__/
+
+.DS_Store
+.env
+.env.save
+.envT
+venv/
+__pycache__/
