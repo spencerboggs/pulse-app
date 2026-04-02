@@ -28,7 +28,7 @@
               <span class="user-handle">@goatit</span>
             </div>
             <div class="user-actions">
-              <a class="btn btn-primary" data-username="@goatit" data-name="Gotit Oopadhayaya">Message</a>
+              <a class="btn btn-primary" data-userid="@2" data-name="Gotit Oopadhayaya">Message</a>
             </div>
           </div>
         </div>
@@ -133,42 +133,83 @@
   </dialog>
 
   <script>
-    const modal = document.getElementById('chatModal');
-    const chatWith = document.getElementById('chatWith');
-    const closeBtn = document.getElementById('closeChat');
-    const avatarThem = document.getElementById('avatarThem');
 
-    function getInitials(name) {
-      if (!name) return '??';
-      const parts = name.trim().split(/\s+/).slice(0, 2);
-      return parts.map(p => p[0]?.toUpperCase() || '').join('') || '??';
+    let currentReceiver = null
+
+    function addMessage(text, fromMe=false){
+        const thread = document.getElementById("chatThread")
+
+        const msg = document.createElement("div")
+        msg.className = fromMe ? "msg from-me" : "msg from-them"
+
+        const bubble = document.createElement("div")
+        bubble.className = "bubble"
+        bubble.textContent = text
+
+        msg.appendChild(bubble)
+        thread.appendChild(msg)
+
+        thread.scrollTop = thread.scrollHeight
     }
 
     document.querySelectorAll('.user-actions .btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const name = btn.getAttribute('data-name') || 'Friend';
-        chatWith.textContent = name;
-        if (avatarThem) avatarThem.textContent = getInitials(name);
 
-        if (typeof modal.showModal === 'function') {
-          modal.showModal();
-        } else {
-          modal.setAttribute('open', 'open');
-        }
-      });
-    });
+        const name = btn.getAttribute('data-name')
+        const userid = btn.getAttribute('data-userid')
 
-    closeBtn.addEventListener('click', () => modal.close());
+        chatWith.textContent = name
+        currentReceiver = userid
 
-    modal.addEventListener('click', (e) => {
-      const rect = modal.getBoundingClientRect();
-      const inDialog = e.clientX >= rect.left && e.clientX <= rect.right &&
-        e.clientY >= rect.top && e.clientY <= rect.bottom;
-      if (!inDialog) modal.close();
-    });
-  </script>
+        modal.showModal()
 
-  <!-- ===================================================================== -->
+        loadMessages()
+
+      })
+    })
+
+    document.getElementById("sendBtn").onclick = async () => {
+
+        const input = document.getElementById("chatInput")
+        const text = input.value.trim()
+
+        if(!text || !currentReceiver) return
+
+        addMessage(text, true)
+
+        input.value=""
+
+        await fetch("/api/send_message",{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                receiver_id: currentReceiver,
+                body: text
+            })
+        })
+    }
+
+    async function loadMessages(){
+
+        if(!currentReceiver) return
+
+        const res = await fetch("/api/get_messages/"+currentReceiver)
+        const messages = await res.json()
+
+        const thread = document.getElementById("chatThread")
+        thread.innerHTML=""
+
+        messages.forEach(m=>{
+            const fromMe = m.sender_id === "{{ session['user_id'] }}"
+            addMessage(m.body, fromMe)
+        })
+    }
+
+    setInterval(loadMessages,3000)
+
+</script>
 </body>
 
 </html>
