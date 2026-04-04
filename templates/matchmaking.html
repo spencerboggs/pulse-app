@@ -6,368 +6,307 @@
   <title>Pulse - Matchmaking</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    .matchmaking-page {
+      max-width: 1200px;
+      margin: 12vh auto 0;
+      padding: 0 24px 40px;
+    }
+
+    .matchmaking-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* Sticky right panel */
+    .matchmaking-sidebar {
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,150,29,0.3) transparent;
+    }
+    .matchmaking-sidebar::-webkit-scrollbar { width: 4px; }
+    .matchmaking-sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255,150,29,0.3);
+      border-radius: 99px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 11px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: inherit;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .search-input::placeholder { opacity: 0.6; }
+
+    .empty-state {
+      opacity: 0.75;
+      padding: 10px 4px;
+      font-size: 0.9rem;
+    }
+    .req-btn  { min-width: 80px; }
+    .add-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+    @media (max-width: 860px) {
+      .matchmaking-layout { grid-template-columns: 1fr; }
+      .matchmaking-sidebar { position: static; max-height: none; }
+    }
+  </style>
 </head>
 
 <body>
-  <main class="container">
+  <main class="matchmaking-page">
     <header class="brand">
       <div class="logo">Pulse</div>
       <p class="subtitle">Matchmaking</p>
     </header>
 
-    <section class="card">
-      <h2>Friend Requests</h2>
+    <div class="matchmaking-layout">
 
-      <section id="requests-list" class="matchmaker-feed" aria-label="Friend Requests">
-        <p id="requests-empty" class="empty-state">No new friend requests.</p>
-
-        <article class="user-card request-card" data-user="lena" data-name="Lena Ortiz" data-handle="@lenaverse" hidden>
-          <div class="user-header">
-            <div class="user-title">Sent you a friend request</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P1</div>
-            <div class="user-meta">
-              <div class="user-name">Lena Ortiz</div>
-              <div class="user-handle">@lenaverse</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost req-btn" data-action="accept">Accept</button>
-              <button type="button" class="btn btn-ghost req-btn" data-action="reject">Reject</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Lena Ortiz') }}">View</a>
-            </div>
-          </div>
-        </article>
-      </section>
-    </section>
-
-    <section class="card" style="margin-top:16px;">
-      <h2>Find a Friend</h2>
-
-      <div class="search-row">
-        <input
-          id="friendSearch"
-          class="search-input"
-          type="text"
-          placeholder="Search by name, username, or @handle"
-          autocomplete="off"
-          aria-label="Search friends"
-        />
-        <button id="clearSearch" type="button" class="btn btn-ghost">Clear</button>
-      </div>
-
-      <p class="helper-text" style="display:none;"></p>
-
-      <section id="search-results" class="matchmaker-feed" style="margin-top:14px;" aria-label="Search Results"></section>
-      <p id="search-empty" class="empty-state" hidden>No results found.</p>
-    </section>
-
-    <section class="card" style="margin-top:16px;">
-      <h2>Suggested Accounts</h2>
-
-      <section id="suggested-list" class="matchmaker-feed" aria-label="Suggested Accounts">
-        <article class="user-card suggested-card" data-user="caleb" data-name="Caleb Tran" data-handle="@c0debycaleb">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P2</div>
-            <div class="user-meta">
-              <div class="user-name">Caleb Tran</div>
-              <div class="user-handle">@c0debycaleb</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Caleb Tran') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="maya" data-name="Maya Chen" data-handle="@itsmayac">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P3</div>
-            <div class="user-meta">
-              <div class="user-name">Maya Chen</div>
-              <div class="user-handle">@itsmayac</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Maya Chen') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="dante" data-name="Dante Rivera" data-handle="@dantethebuilder">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P4</div>
-            <div class="user-meta">
-              <div class="user-name">Dante Rivera</div>
-              <div class="user-handle">@dantethebuilder</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Dante Rivera') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="eli" data-name="Eli Navarro" data-handle="@elinavdev">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P5</div>
-            <div class="user-meta">
-              <div class="user-name">Eli Navarro</div>
-              <div class="user-handle">@elinavdev</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Eli Navarro') }}">View</a>
-            </div>
-          </div>
-        </article>
+      <!-- LEFT: suggested accounts -->
+      <section class="card">
+        <h2>Suggested Accounts</h2>
+        <section id="suggested-list" class="matchmaker-feed" aria-label="Suggested Accounts">
+          <p id="suggested-loading" style="opacity:0.6;padding:8px 4px;">Loading users…</p>
+          <p id="suggested-empty" class="empty-state" hidden>No other users found.</p>
+        </section>
+        <p style="margin-top:16px;">
+          <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
+        </p>
       </section>
 
-      <p style="margin-top:16px;">
-        <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
-      </p>
-    </section>
+      <!-- RIGHT: sticky sidebar — requests + search -->
+      <aside class="matchmaking-sidebar">
+
+        <!-- Friend Requests -->
+        <div class="card">
+          <h2 style="font-size:1.05rem;margin-bottom:12px;">Friend Requests</h2>
+          <section id="requests-list" class="matchmaker-feed" aria-label="Friend Requests">
+            <p id="requests-empty" class="empty-state">No new friend requests.</p>
+          </section>
+        </div>
+
+        <!-- Search -->
+        <div class="card">
+          <h2 style="font-size:1.05rem;margin-bottom:4px;">Find a Friend</h2>
+          <div class="search-row">
+            <input id="friendSearch" class="search-input" type="text"
+                   placeholder="Search by username…" autocomplete="off" aria-label="Search friends" />
+            <button id="clearSearch" type="button" class="btn btn-ghost">Clear</button>
+          </div>
+          <section id="search-results" class="matchmaker-feed" style="margin-top:12px;" aria-label="Search Results"></section>
+          <p id="search-empty" class="empty-state" hidden>No results found.</p>
+        </div>
+
+      </aside>
+    </div><!-- /.matchmaking-layout -->
   </main>
 
   <script>
     (function () {
       const requestsList = document.getElementById("requests-list");
       const requestsEmpty = document.getElementById("requests-empty");
-
       const searchInput = document.getElementById("friendSearch");
       const clearBtn = document.getElementById("clearSearch");
       const results = document.getElementById("search-results");
       const searchEmpty = document.getElementById("search-empty");
+
+      function esc(s) {
+        return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+      }
+      function makeInitials(name) {
+        const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+        return ((parts[0]||"U")[0] + ((parts[1]||"")[0]||"")).toUpperCase();
+      }
 
       function updateRequestsEmpty() {
         const visible = requestsList.querySelectorAll(".request-card:not([hidden])");
         requestsEmpty.hidden = visible.length !== 0;
       }
 
-      function setRequested(btn) {
-        btn.textContent = "Requested";
-        btn.disabled = true;
-        btn.setAttribute("aria-disabled", "true");
-      }
+      // Load pending friend requests
+      (async function loadRequests() {
+        try {
+          const res  = await fetch("/friend/requests");
+          const data = await res.json();
+          (data.requests || []).forEach(u => {
+            const username   = esc(u.username || "");
+            const userId     = esc(String(u.id));
+            const initials   = makeInitials(u.username);
+            const profileUrl = "/u/" + encodeURIComponent(u.username || userId);
+            requestsList.insertAdjacentHTML("beforeend", `
+              <article class="user-card request-card" data-user="${userId}" data-user-id="${userId}" data-name="${username}">
+                <div class="user-header"><div class="user-title">Sent you a friend request</div></div>
+                <div class="user-main">
+                  <div class="user-avatar">${initials}</div>
+                  <div class="user-meta">
+                    <div class="user-name">${username}</div>
+                    <div class="user-handle">@${username}</div>
+                  </div>
+                  <div class="user-actions">
+                    <button type="button" class="btn btn-ghost req-btn" data-action="accept">Accept</button>
+                    <button type="button" class="btn btn-ghost req-btn" data-action="reject">Reject</button>
+                    <a class="btn btn-primary" href="${profileUrl}">View</a>
+                  </div>
+                </div>
+              </article>`);
+          });
+          updateRequestsEmpty();
+        } catch (e) { updateRequestsEmpty(); }
+      })();
 
-      function esc(s) {
-        return (s || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
-
-      function makeInitials(name) {
-        const parts = (name || "").trim().split(/\s+/).filter(Boolean);
-        const a = (parts[0] || "U")[0] || "U";
-        const b = (parts[1] || "")[0] || "";
-        return (a + b).toUpperCase();
-      }
-
+      // Search
       function renderSearch(users) {
         results.innerHTML = "";
-
-        if (!users || users.length === 0) {
-          searchEmpty.hidden = false;
-          return;
-        }
-
+        if (!users || !users.length) { searchEmpty.hidden = false; return; }
         searchEmpty.hidden = true;
-
-        users.forEach(function (u) {
-          const name = u.name || u.username || "User";
-          const handle = u.handle || (u.username ? ("@" + u.username) : "");
-          const id = u.id || u.username || name;
-          const initials = u.initials || makeInitials(name);
-
-          const safeName = esc(name);
-          const safeHandle = esc(handle);
-          const safeId = esc(String(id));
-          const safeInitials = esc(initials);
-
-          const usernameForProfile = encodeURIComponent(u.username || name);
-
+        users.forEach(u => {
+          const name    = esc(u.name || u.username || "User");
+          const handle  = esc(u.handle || ("@" + (u.username || "")));
+          const id      = esc(String(u.id || u.username || name));
+          const initials = esc(makeInitials(u.name || u.username));
+          const profileUrl = "/u/" + encodeURIComponent(u.username || name);
           results.insertAdjacentHTML("beforeend", `
-            <article class="user-card search-card" data-user="${safeId}" data-user-id="${safeId}" data-name="${safeName}" data-handle="${safeHandle}">
-              <div class="user-header">
-                <div class="user-title">Search result</div>
-              </div>
+            <article class="user-card search-card" data-user="${id}" data-user-id="${id}" data-name="${name}" data-handle="${handle}">
+              <div class="user-header"><div class="user-title">Search result</div></div>
               <div class="user-main">
-                <div class="user-avatar">${safeInitials}</div>
+                <div class="user-avatar">${initials}</div>
                 <div class="user-meta">
-                  <div class="user-name">${safeName}</div>
-                  <div class="user-handle">${safeHandle}</div>
+                  <div class="user-name">${name}</div>
+                  <div class="user-handle">${handle}</div>
                 </div>
                 <div class="user-actions">
                   <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-                  <a class="btn btn-primary" href="/profile/${usernameForProfile}">View</a>
+                  <a class="btn btn-primary" href="${profileUrl}">View</a>
                 </div>
               </div>
-            </article>
-          `);
+            </article>`);
         });
       }
 
       let timer = null;
-
       async function doSearch() {
         const q = (searchInput.value || "").trim();
-
-        if (q.length === 0) {
-          results.innerHTML = "";
-          searchEmpty.hidden = true;
-          return;
-        }
-
+        if (!q) { results.innerHTML = ""; searchEmpty.hidden = true; return; }
         try {
-          const r = await fetch(`/search_users?q=${encodeURIComponent(q)}`, {
-            headers: { "Accept": "application/json" }
-          });
-
-          if (!r.ok) {
-            renderSearch([]);
-            return;
-          }
-
-          const data = await r.json();
-          renderSearch(data.users || []);
-        } catch (err) {
-          renderSearch([]);
-        }
+          const r = await fetch(`/search_users?q=${encodeURIComponent(q)}`, { headers: { Accept: "application/json" } });
+          renderSearch(r.ok ? (await r.json()).users || [] : []);
+        } catch { renderSearch([]); }
       }
+      searchInput.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(doSearch, 200); });
+      clearBtn.addEventListener("click", () => { searchInput.value = ""; results.innerHTML = ""; searchEmpty.hidden = true; searchInput.focus(); });
 
-      searchInput.addEventListener("input", function () {
-        clearTimeout(timer);
-        timer = setTimeout(doSearch, 200);
-      });
-
-      clearBtn.addEventListener("click", function () {
-        searchInput.value = "";
-        results.innerHTML = "";
-        searchEmpty.hidden = true;
-        searchInput.focus();
-      });
-
+      // Button actions (accept / reject / add-friend)
       document.addEventListener("click", function (e) {
-        const actionBtn = e.target.closest("[data-action]");
-        if (!actionBtn) return;
-
-        const action = actionBtn.dataset.action;
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        const action = btn.dataset.action;
 
         if (action === "accept" || action === "reject") {
-          const reqCard = actionBtn.closest(".request-card");
-          if (!reqCard) return;
-
-          reqCard.hidden = true;
+          const card = btn.closest(".request-card");
+          if (!card) return;
+          card.hidden = true;
           updateRequestsEmpty();
-
-          // TODO backend:
-          // fetch(action === "accept" ? "/friend/accept" : "/friend/reject", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({ user: reqCard.dataset.user })
-          // });
-
+          fetch(action === "accept" ? "/friend/accept" : "/friend/reject", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sender_id: card.dataset.userId })
+          }).catch(() => {});
           return;
         }
 
         if (action === "add-friend") {
-          const card = actionBtn.closest(".user-card");
+          const card = btn.closest(".user-card");
           if (!card) return;
-
           const friendId = card.dataset.userId;
-          if (!friendId) {
-            // Suggested placeholder cards have no real ID — just mark requested
-            setRequested(actionBtn);
-            return;
-          }
-
-          setRequested(actionBtn);
+          if (!friendId) return;
+          btn.disabled = true;
+          btn.textContent = "Sending…";
           fetch("/friend/add", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ friend_id: friendId })
-          }).catch(() => {});
-
-          return;
+          })
+            .then(r => r.json())
+            .then(data => {
+              if (data.error) { btn.disabled = false; btn.textContent = "Add Friend"; alert("Error: " + data.error); }
+              else { btn.textContent = "Requested"; btn.setAttribute("aria-disabled","true"); }
+            })
+            .catch(() => { btn.disabled = false; btn.textContent = "Add Friend"; });
         }
       });
 
-      const demoRequest = document.querySelector('.request-card[data-user="lena"]');
-      if (demoRequest) demoRequest.hidden = false;
       updateRequestsEmpty();
     })();
   </script>
 
-  <style>
-    .empty-state {
-      opacity: 0.75;
-      padding: 12px 6px;
-    }
+  <!-- Load suggested accounts -->
+  <script>
+    (async function () {
+      const list    = document.getElementById("suggested-list");
+      const loading = document.getElementById("suggested-loading");
+      const empty   = document.getElementById("suggested-empty");
 
-    .req-btn {
-      min-width: 92px;
-    }
+      function esc(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+      function initials(u) { return (u||"?")[0].toUpperCase(); }
 
-    .add-btn[disabled] {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
+      try {
+        const res   = await fetch("/users/all");
+        const data  = await res.json();
+        const users = data.users || [];
+        loading.remove();
 
-    .search-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-top: 10px;
-    }
+        if (!users.length) { empty.hidden = false; return; }
 
-    .search-input {
-      flex: 1;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      color: inherit;
-      outline: none;
-    }
+        users.forEach(u => {
+          const username   = esc(u.username || "");
+          const handle     = esc(u.handle || ("@" + u.username));
+          const userId     = esc(String(u.id));
+          const profileUrl = "/u/" + encodeURIComponent(u.username || userId);
+          const status     = u.status || "none";
 
-    .search-input::placeholder {
-      opacity: 0.7;
-    }
+          const btnLabel    = status === "accepted" ? "Friends" : status === "pending" ? "Requested" : "Add Friend";
+          const btnDisabled = status !== "none";
 
-    .helper-text {
-      margin-top: 10px;
-      opacity: 0.75;
-      font-size: 0.95rem;
-    }
-
-    code {
-      opacity: 0.9;
-    }
-  </style>
+          list.insertAdjacentHTML("beforeend", `
+            <article class="user-card suggested-card" data-user="${userId}" data-user-id="${userId}" data-name="${username}" data-handle="${handle}">
+              <div class="user-header"><div class="user-title">Suggested for you</div></div>
+              <div class="user-main">
+                <div class="user-avatar">${initials(u.username)}</div>
+                <div class="user-meta">
+                  <div class="user-name">${username}</div>
+                  <div class="user-handle">${handle}</div>
+                </div>
+                <div class="user-actions">
+                  <button type="button" class="btn btn-ghost add-btn" data-action="add-friend"
+                    ${btnDisabled ? "disabled aria-disabled='true'" : ""}>${btnLabel}</button>
+                  <a class="btn btn-primary" href="${profileUrl}">View</a>
+                </div>
+              </div>
+            </article>`);
+        });
+      } catch (e) {
+        loading.textContent = "Could not load users.";
+      }
+    })();
+  </script>
 </body>
 </html>

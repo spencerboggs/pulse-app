@@ -8,11 +8,85 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    /* Widen page for two-column layout */
+    .insights-container {
+      max-width: 1200px;
+      margin: 12vh auto 0;
+      padding: 0 24px;
+    }
+
+    .insights-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* Sidebar sticks while scrolling the news */
+    .activity-sidebar {
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,150,29,0.3) transparent;
+    }
+
+    .activity-sidebar::-webkit-scrollbar { width: 4px; }
+    .activity-sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255,150,29,0.3);
+      border-radius: 99px;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+    }
+
+    .activity-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255,150,29,0.18);
+      border: 1px solid rgba(255,150,29,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.82rem;
+      flex-shrink: 0;
+    }
+
+    .activity-text {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+
+    .activity-text .who { font-weight: 600; color: var(--fg); }
+    .activity-text .verb { color: rgba(255,246,215,0.6); }
+    .activity-text .what { color: var(--fg); }
+
+    .activity-time {
+      font-size: 0.75rem;
+      color: rgba(255,246,215,0.4);
+      white-space: nowrap;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+
     .follow-btn.following {
       background: var(--accent);
       color: var(--accent-contrast);
       border-color: var(--accent);
     }
+
     .toast {
       position: fixed;
       bottom: 24px;
@@ -28,30 +102,34 @@
       z-index: 999;
       pointer-events: none;
     }
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 860px) {
+      .insights-layout {
+        grid-template-columns: 1fr;
+      }
+      .activity-sidebar {
+        position: static;
+        max-height: none;
+        order: -1; /* show activity above news on mobile */
+      }
     }
   </style>
 </head>
 
 <body>
-  <main class="container">
+  <main class="insights-container">
     <header class="brand">
       <div class="logo">Pulse</div>
       <p class="subtitle">Weekly Insights</p>
     </header>
 
-    <section class="card" id="friends-activity-card" style="margin-bottom:16px;display:none;">
-      <h2>Friends' Activity</h2>
-      <ul id="friends-activity-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;"></ul>
-      <p id="friends-activity-empty" class="empty-state" style="display:none;">
-        No friend activity yet — add friends in <a href="{{ url_for('matchmaking') }}">Matchmaking</a>.
-      </p>
-    </section>
+    <div class="insights-layout">
 
-    <section class="card">
-      <h2>Artist News &amp; Rumors</h2>
-      <p>Fresh drops, tours, and collabs from the music world.</p>
+      <!-- LEFT: news feed -->
+      <section class="card">
+        <h2>Artist News &amp; Rumors</h2>
+        <p>Fresh drops, tours, and collabs from the music world.</p>
 
       <ul class="news-list" id="news-list">
 
@@ -219,10 +297,23 @@
 
       </ul>
 
-      <p style="margin-top:16px;">
-        <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
-      </p>
-    </section>
+        <p style="margin-top:16px;">
+          <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
+        </p>
+      </section>
+
+      <!-- RIGHT: sticky friends activity sidebar -->
+      <aside class="activity-sidebar">
+        <div class="card" id="friends-activity-card">
+          <h2 style="font-size:1.1rem;margin-bottom:12px;">Friends' Activity</h2>
+          <ul id="friends-activity-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;"></ul>
+          <p id="friends-activity-empty" class="empty-state" style="display:none;font-size:0.88rem;">
+            No activity yet — add friends in <a href="{{ url_for('matchmaking') }}">Matchmaking</a>.
+          </p>
+        </div>
+      </aside>
+
+    </div><!-- /.insights-layout -->
   </main>
 
   <div class="toast" id="toast"></div>
@@ -296,46 +387,47 @@
 
     // Load friends' activity
     (async function () {
+      const list  = document.getElementById("friends-activity-list");
+      const empty = document.getElementById("friends-activity-empty");
+
+      function timeAgo(isoStr) {
+        if (!isoStr) return "";
+        const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+        if (diff < 60)    return "just now";
+        if (diff < 3600)  return Math.floor(diff / 60) + "m ago";
+        if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+        return Math.floor(diff / 86400) + "d ago";
+      }
+
       try {
-        const res = await fetch("{{ url_for('friends_activity') }}");
+        const res  = await fetch("{{ url_for('friends_activity') }}");
         const data = await res.json();
         const items = data.activity || [];
-        const card = document.getElementById("friends-activity-card");
-        const list = document.getElementById("friends-activity-list");
-        const empty = document.getElementById("friends-activity-empty");
 
         if (!items.length) {
-          card.style.display = "block";
           empty.style.display = "block";
+          if (data.debug) empty.textContent = "No activity yet — " + data.debug;
           return;
-        }
-
-        function timeAgo(isoStr) {
-          if (!isoStr) return "";
-          const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
-          if (diff < 60) return "just now";
-          if (diff < 3600) return Math.floor(diff / 60) + "m ago";
-          if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
-          return Math.floor(diff / 86400) + "d ago";
         }
 
         items.forEach(item => {
           const li = document.createElement("li");
-          li.style.cssText = "display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;";
+          li.className = "activity-item";
           const initials = (item.username || "?")[0].toUpperCase();
           li.innerHTML = `
-            <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,150,29,0.2);border:1px solid rgba(255,150,29,0.35);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">${initials}</div>
-            <div style="flex:1;min-width:0;">
-              <span style="font-weight:600;color:var(--fg);">@${item.username}</span>
-              <span style="color:rgba(255,246,215,0.7);"> followed </span>
-              <span style="color:var(--fg);">${item.title}</span>
+            <div class="activity-avatar">${initials}</div>
+            <div class="activity-text">
+              <span class="who">@${item.username}</span>
+              <span class="verb"> followed </span>
+              <span class="what">${item.title}</span>
             </div>
-            <span style="font-size:0.78rem;color:rgba(255,246,215,0.45);flex-shrink:0;">${timeAgo(item.created_at)}</span>`;
+            <span class="activity-time">${timeAgo(item.created_at)}</span>`;
           list.appendChild(li);
         });
-
-        card.style.display = "block";
-      } catch (e) { /* not logged in */ }
+      } catch (e) {
+        empty.style.display = "block";
+        empty.textContent = "Could not load activity.";
+      }
     })();
   </script>
 </body>
