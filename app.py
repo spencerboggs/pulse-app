@@ -261,6 +261,138 @@ def create_app() -> Flask:
     def weekly_insights():
         return render_template("weekly_insights.html")
 
+    # ===== FRIENDS =====
+    # Requires a Supabase table:
+    #   create table friendships (
+    #     id uuid default gen_random_uuid() primary key,
+    #     user_id text not null,
+    #     friend_id text not null,
+    #     status text default 'accepted',
+    #     created_at timestamptz default now(),
+    #     unique(user_id, friend_id)
+    #   );
+    @app.route("/friend/add", methods=["POST"])
+    def add_friend():
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+        data = request.get_json()
+        friend_id = data.get("friend_id")
+        if not friend_id or str(friend_id) == str(session["user_id"]):
+            return jsonify({"error": "Invalid"}), 400
+        try:
+            supabase.table("friendships").upsert({
+                "user_id": str(session["user_id"]),
+                "friend_id": str(friend_id),
+                "status": "accepted"
+            }).execute()
+            return jsonify({"status": "added"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/insights/friends-activity")
+    def friends_activity():
+        if "user_id" not in session:
+            return jsonify({"activity": []})
+        try:
+            uid = str(session["user_id"])
+
+            # Friends where current user initiated
+            f1 = supabase.table("friendships").select("friend_id") \
+                .eq("user_id", uid).eq("status", "accepted").execute()
+            # Friends where other user initiated
+            f2 = supabase.table("friendships").select("user_id") \
+                .eq("friend_id", uid).eq("status", "accepted").execute()
+
+            friend_ids = [r["friend_id"] for r in (f1.data or [])]
+            friend_ids += [r["user_id"] for r in (f2.data or [])]
+            friend_ids = list(set(friend_ids))
+
+            if not friend_ids:
+                return jsonify({"activity": []})
+
+            activity = supabase.table("followed_insights") \
+                .select("user_id, title, badges, created_at") \
+                .in_("user_id", friend_ids) \
+                .order("created_at", desc=True) \
+                .limit(20) \
+                .execute()
+
+            unique_ids = list(set(a["user_id"] for a in (activity.data or [])))
+            users_res = supabase.table("users") \
+                .select("id, username") \
+                .in_("id", unique_ids) \
+                .execute()
+            id_to_username = {str(u["id"]): u["username"] for u in (users_res.data or [])}
+
+            result = []
+            for a in (activity.data or []):
+                result.append({
+                    "username": id_to_username.get(str(a["user_id"]), "Someone"),
+                    "title": a["title"],
+                    "badges": a.get("badges", ""),
+                    "created_at": a.get("created_at", "")
+                })
+            return jsonify({"activity": result})
+        except Exception as e:
+            return jsonify({"activity": [], "error": str(e)})
+
+    # ===== FOLLOW / UNFOLLOW INSIGHT ITEMS =====
+    # Requires a Supabase table:
+    #   create table followed_insights (
+    #     id uuid default gen_random_uuid() primary key,
+    #     user_id text not null,
+    #     item_id text not null,
+    #     title text,
+    #     badges text,
+    #     unique(user_id, item_id)
+    #   );
+    @app.route("/insights/follow", methods=["POST"])
+    def follow_insight():
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+        data = request.get_json()
+        item_id = data.get("item_id")
+        title = data.get("title", "")
+        badges = data.get("badges", "")
+        try:
+            supabase.table("followed_insights").upsert({
+                "user_id": str(session["user_id"]),
+                "item_id": item_id,
+                "title": title,
+                "badges": badges
+            }).execute()
+            return jsonify({"status": "followed"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/insights/unfollow", methods=["POST"])
+    def unfollow_insight():
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+        data = request.get_json()
+        item_id = data.get("item_id")
+        try:
+            supabase.table("followed_insights").delete() \
+                .eq("user_id", str(session["user_id"])) \
+                .eq("item_id", item_id) \
+                .execute()
+            return jsonify({"status": "unfollowed"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/insights/followed")
+    def get_followed_insights():
+        if "user_id" not in session:
+            return jsonify({"items": []})
+        try:
+            result = supabase.table("followed_insights") \
+                .select("item_id, title, badges") \
+                .eq("user_id", str(session["user_id"])) \
+                .execute()
+            return jsonify({"items": result.data or []})
+        except Exception:
+            return jsonify({"items": []})
+
     @app.route("/matchmaking")
     def matchmaking():
         return render_template("matchmaking.html")

@@ -65,6 +65,11 @@
     });
   </script>
 
+      <div class="profile-section" id="followed-section" style="display:none;">
+        <h3>Followed Artists &amp; News</h3>
+        <ul id="followed-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;"></ul>
+      </div>
+
       <p style="margin-top: 16px;">
         <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
       </p>
@@ -76,6 +81,29 @@
         const params = new URLSearchParams(window.location.search);
         const user = params.get('user');
         if (user) document.getElementById('profile-name').textContent = user;
+      })();
+
+      // Load followed insights
+      (async function () {
+        try {
+          const res = await fetch("{{ url_for('get_followed_insights') }}");
+          const data = await res.json();
+          const items = data.items || [];
+          if (!items.length) return;
+
+          const list = document.getElementById("followed-list");
+          items.forEach(item => {
+            const li = document.createElement("li");
+            li.style.cssText = "background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;";
+            const badges = item.badges
+              ? item.badges.split("·").map(b => `<span class="badge" style="font-size:0.75rem;">${b.trim()}</span>`).join(" ")
+              : "";
+            li.innerHTML = `<div style="font-weight:600;color:var(--fg);font-size:0.95rem;margin-bottom:4px;">${item.title}</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${badges}</div>`;
+            list.appendChild(li);
+          });
+
+          document.getElementById("followed-section").style.display = "block";
+        } catch (e) { /* not logged in or table missing */ }
       })();
     </script>
   </main>
