@@ -311,6 +311,31 @@ def create_app() -> Flask:
     #     created_at timestamptz default now(),
     #     unique(user_id, friend_id)
     #   );
+    @app.route("/friends/list")
+    def friends_list():
+        if "user_id" not in session:
+            return jsonify({"friends": []})
+        try:
+            uid = str(session["user_id"])
+            f1 = supabase.table("friendships").select("friend_id") \
+                .eq("user_id", uid).eq("status", "accepted").execute()
+            f2 = supabase.table("friendships").select("user_id") \
+                .eq("friend_id", uid).eq("status", "accepted").execute()
+
+            ids = list({r["friend_id"] for r in (f1.data or [])} |
+                       {r["user_id"]   for r in (f2.data or [])})
+            if not ids:
+                return jsonify({"friends": []})
+
+            users = supabase.table("users").select("id, username") \
+                .in_("id", ids).execute()
+            return jsonify({"friends": [
+                {"id": u["id"], "username": u["username"]}
+                for u in (users.data or [])
+            ]})
+        except Exception as e:
+            return jsonify({"friends": [], "error": str(e)})
+
     @app.route("/friend/add", methods=["POST"])
     def add_friend():
         if "user_id" not in session:
