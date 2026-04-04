@@ -6,8 +6,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>pulse - Weekly Insights</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    .follow-btn.following {
+      background: var(--accent);
+      color: var(--accent-contrast);
+      border-color: var(--accent);
+    }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: rgba(11, 18, 32, 0.95);
+      color: var(--fg);
+      border: 1px solid rgba(255,150,29,0.4);
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      transition: transform 0.3s ease;
+      z-index: 999;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
 </head>
 
 <body>
@@ -16,66 +40,252 @@
       <div class="logo">Pulse</div>
       <p class="subtitle">Weekly Insights</p>
     </header>
-    <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-    <section class="card">
-      <h2>Upcoming News</h2>
-      <p>Fresh rumors, drops, tours, and collabs from artists you follow.</p>
 
-      <ul class="news-list">
-        <li class="news-card">
+    <section class="card">
+      <h2>Artist News &amp; Rumors</h2>
+      <p>Fresh drops, tours, and collabs from the music world.</p>
+
+      <ul class="news-list" id="news-list">
+
+        <!-- 1. Kendrick Lamar -->
+        <li class="news-card"
+            data-id="kendrick-grand-national-tour"
+            data-title="Kendrick Lamar &amp; SZA announce Grand National Tour extension"
+            data-badges="Tour · Confirmed">
           <div class="news-body">
-            <h3 class="news-title">Lebron James teases collab with hit Pop Star Drake</h3>
-            <p class="news-summary">NBA Star Lebron James posted a 10‑second clip with Drake in the background. Fans
-              expect a TikTok dance challenge to drop alongside the track.</p>
-          </div>
-          <div class="news-meta">
-            <span class="badge">Collaboration</span>
-            <span class="badge">Teaser</span>
-            <span class="pill-date">Nov 3</span>
-          </div>
-          <div class="news-actions">
-            <a class="btn btn-ghost" href="#">Remind me</a>
-            <a class="btn btn-primary" href="#">Pre‑save</a>
-          </div>
-        </li>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <li class="news-card">
-          <div class="news-body">
-            <h3 class="news-title">Lo‑Fi Collective announces West Coast mini‑tour</h3>
-            <p class="news-summary">Six intimate shows with vinyl pop‑ups and beat‑making workshops. Los Angeles kickoff
-              rumored to feature surprise guests.</p>
+            <h3 class="news-title">Kendrick Lamar &amp; SZA — Grand National Tour</h3>
+            <p class="news-summary">After a historic Super Bowl LIX halftime performance, Kendrick and SZA launched
+              the Grand National Tour across North America. New stadium dates have been added through summer 2025
+              following overwhelming demand.</p>
           </div>
           <div class="news-meta">
             <span class="badge">Tour</span>
-            <span class="badge">Workshop</span>
-            <span class="pill-date">Nov 7</span>
+            <span class="badge">Confirmed</span>
+            <span class="pill-date">Apr – Jul 2025</span>
           </div>
           <div class="news-actions">
-            <a class="btn btn-ghost" href="#">View dates</a>
-            <a class="btn btn-primary" href="#">Get tickets</a>
-          </div>
-        </li>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <li class="news-card">
-          <div class="news-body">
-            <h3 class="news-title">Mariah Carey starts to defrost ahead of Christmas</h3>
-            <p class="news-summary">Producers spotted together in the studio as well as a sizeable amount of water being
-              found in her Los Angeles mansion</p>
-          </div>
-          <div class="news-meta">
-            <span class="badge">New Song</span>
-            <span class="badge">Rumor</span>
-            <span class="pill-date">Dec 25</span>
-          </div>
-          <div class="news-actions">
-            <a class="btn btn-ghost" href="#">Follow rumor</a>
-            <a class="btn btn-primary" href="#">Notify on confirm</a>
+            <a class="btn btn-ghost"
+               href="https://www.ticketmaster.com/kendrick-lamar-tickets/artist/1082792"
+               target="_blank" rel="noopener">View Dates</a>
+            <a class="btn btn-primary"
+               href="https://www.ticketmaster.com/kendrick-lamar-tickets/artist/1082792"
+               target="_blank" rel="noopener">Get Tickets</a>
+            <button class="btn btn-ghost follow-btn" data-id="kendrick-grand-national-tour">Follow</button>
           </div>
         </li>
 
-        <p style="margin-top:16px;"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+        <!-- 2. Sabrina Carpenter -->
+        <li class="news-card"
+            data-id="sabrina-short-n-sweet-tour"
+            data-title="Sabrina Carpenter — Short n' Sweet Tour"
+            data-badges="Tour · Ongoing">
+          <div class="news-body">
+            <h3 class="news-title">Sabrina Carpenter — Short n' Sweet Tour</h3>
+            <p class="news-summary">Riding the massive success of <em>Short n' Sweet</em>, Sabrina Carpenter's
+              sold-out world tour continues with new dates added in Europe and Asia. Opening night saw surprise
+              guest Chappell Roan join for an unreleased collab.</p>
+          </div>
+          <div class="news-meta">
+            <span class="badge">Tour</span>
+            <span class="badge">Ongoing</span>
+            <span class="pill-date">2025</span>
+          </div>
+          <div class="news-actions">
+            <a class="btn btn-ghost"
+               href="https://www.ticketmaster.com/sabrina-carpenter-tickets/artist/2706134"
+               target="_blank" rel="noopener">View Dates</a>
+            <a class="btn btn-primary"
+               href="https://www.ticketmaster.com/sabrina-carpenter-tickets/artist/2706134"
+               target="_blank" rel="noopener">Get Tickets</a>
+            <button class="btn btn-ghost follow-btn" data-id="sabrina-short-n-sweet-tour">Follow</button>
+          </div>
+        </li>
+
+        <!-- 3. Chappell Roan -->
+        <li class="news-card"
+            data-id="chappell-roan-album-2"
+            data-title="Chappell Roan teases sophomore album with cryptic posts"
+            data-badges="New Album · Rumor">
+          <div class="news-body">
+            <h3 class="news-title">Chappell Roan teases sophomore album with cryptic posts</h3>
+            <p class="news-summary">After sweeping the 2025 Grammys, Chappell Roan has been dropping mysterious
+              visuals and snippets on social media. Producers Frank Ocean and MNEK have been spotted entering
+              her studio — fans are convinced a major era shift is incoming.</p>
+          </div>
+          <div class="news-meta">
+            <span class="badge">New Album</span>
+            <span class="badge">Rumor</span>
+            <span class="pill-date">2025</span>
+          </div>
+          <div class="news-actions">
+            <a class="btn btn-ghost"
+               href="https://open.spotify.com/artist/7GlBOeep6PqTfFi59PTUUN"
+               target="_blank" rel="noopener">Follow on Spotify</a>
+            <a class="btn btn-primary"
+               href="https://open.spotify.com/artist/7GlBOeep6PqTfFi59PTUUN"
+               target="_blank" rel="noopener">Pre-Save</a>
+            <button class="btn btn-ghost follow-btn" data-id="chappell-roan-album-2">Follow</button>
+          </div>
+        </li>
+
+        <!-- 4. The Weeknd -->
+        <li class="news-card"
+            data-id="weeknd-hurry-up-tomorrow-tour"
+            data-title="The Weeknd — Hurry Up Tomorrow World Tour"
+            data-badges="Tour · Confirmed">
+          <div class="news-body">
+            <h3 class="news-title">The Weeknd — Hurry Up Tomorrow World Tour</h3>
+            <p class="news-summary">Abel Tesfaye announced the Hurry Up Tomorrow world tour alongside his
+              film of the same name. The stadium run kicks off in summer 2025, marking what he has
+              described as "the final chapter of The Weeknd" character.</p>
+          </div>
+          <div class="news-meta">
+            <span class="badge">Tour</span>
+            <span class="badge">Confirmed</span>
+            <span class="pill-date">Summer 2025</span>
+          </div>
+          <div class="news-actions">
+            <a class="btn btn-ghost"
+               href="https://www.ticketmaster.com/the-weeknd-tickets/artist/1116352"
+               target="_blank" rel="noopener">View Dates</a>
+            <a class="btn btn-primary"
+               href="https://www.ticketmaster.com/the-weeknd-tickets/artist/1116352"
+               target="_blank" rel="noopener">Get Tickets</a>
+            <button class="btn btn-ghost follow-btn" data-id="weeknd-hurry-up-tomorrow-tour">Follow</button>
+          </div>
+        </li>
+
+        <!-- 5. Bad Bunny -->
+        <li class="news-card"
+            data-id="bad-bunny-debí-tirar-más-fotos"
+            data-title="Bad Bunny — Debí Tirar Más Fotos Tour rumored for late 2025"
+            data-badges="Tour · Rumor">
+          <div class="news-body">
+            <h3 class="news-title">Bad Bunny — Debí Tirar Más Fotos Tour rumored for late 2025</h3>
+            <p class="news-summary">Following the critically acclaimed album <em>Debí Tirar Más Fotos</em>,
+              insiders suggest Benito is planning a major arena and stadium tour for fall/winter 2025.
+              No official dates yet, but presale sign-ups have quietly opened on his site.</p>
+          </div>
+          <div class="news-meta">
+            <span class="badge">Tour</span>
+            <span class="badge">Rumor</span>
+            <span class="pill-date">Late 2025</span>
+          </div>
+          <div class="news-actions">
+            <a class="btn btn-ghost"
+               href="https://www.ticketmaster.com/bad-bunny-tickets/artist/2275155"
+               target="_blank" rel="noopener">View Dates</a>
+            <a class="btn btn-primary"
+               href="https://www.ticketmaster.com/bad-bunny-tickets/artist/2275155"
+               target="_blank" rel="noopener">Get Tickets</a>
+            <button class="btn btn-ghost follow-btn" data-id="bad-bunny-debí-tirar-más-fotos">Follow</button>
+          </div>
+        </li>
+
+        <!-- 6. Taylor Swift -->
+        <li class="news-card"
+            data-id="taylor-swift-new-era-2025"
+            data-title="Taylor Swift hints at new era after Eras Tour conclusion"
+            data-badges="New Album · Teaser">
+          <div class="news-body">
+            <h3 class="news-title">Taylor Swift hints at new era after Eras Tour conclusion</h3>
+            <p class="news-summary">With the record-breaking Eras Tour now wrapped, Taylor Swift has gone
+              quiet on social media — a pattern Swifties know well. Easter eggs spotted in her recent
+              Instagram posts point to a new album announcement possibly arriving before summer 2025.</p>
+          </div>
+          <div class="news-meta">
+            <span class="badge">New Album</span>
+            <span class="badge">Teaser</span>
+            <span class="pill-date">2025</span>
+          </div>
+          <div class="news-actions">
+            <a class="btn btn-ghost"
+               href="https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02"
+               target="_blank" rel="noopener">Follow on Spotify</a>
+            <a class="btn btn-primary"
+               href="https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02"
+               target="_blank" rel="noopener">Pre-Save</a>
+            <button class="btn btn-ghost follow-btn" data-id="taylor-swift-new-era-2025">Follow</button>
+          </div>
+        </li>
+
+      </ul>
+
+      <p style="margin-top:16px;">
+        <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
+      </p>
     </section>
   </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const FOLLOW_URL = "{{ url_for('follow_insight') }}";
+    const UNFOLLOW_URL = "{{ url_for('unfollow_insight') }}";
+    const FOLLOWED_URL = "{{ url_for('get_followed_insights') }}";
+
+    const toast = document.getElementById("toast");
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2200);
+    }
+
+    // Load existing follows and mark buttons
+    async function loadFollows() {
+      try {
+        const res = await fetch(FOLLOWED_URL);
+        const data = await res.json();
+        const ids = new Set((data.items || []).map(i => i.item_id));
+        document.querySelectorAll(".follow-btn").forEach(btn => {
+          if (ids.has(btn.dataset.id)) {
+            btn.classList.add("following");
+            btn.textContent = "Following";
+          }
+        });
+      } catch (e) { /* not logged in or table missing */ }
+    }
+
+    // Toggle follow on click
+    document.querySelectorAll(".follow-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const isFollowing = btn.classList.contains("following");
+        const card = btn.closest(".news-card");
+        const itemId = btn.dataset.id;
+        const title = card.dataset.title || card.querySelector(".news-title").textContent;
+        const badges = card.dataset.badges || "";
+
+        const url = isFollowing ? UNFOLLOW_URL : FOLLOW_URL;
+        const body = isFollowing
+          ? { item_id: itemId }
+          : { item_id: itemId, title, badges };
+
+        try {
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          if (data.error) throw new Error(data.error);
+
+          if (isFollowing) {
+            btn.classList.remove("following");
+            btn.textContent = "Follow";
+            showToast("Unfollowed");
+          } else {
+            btn.classList.add("following");
+            btn.textContent = "Following";
+            showToast("Added to your profile!");
+          }
+        } catch (e) {
+          showToast("Error — are you logged in?");
+        }
+      });
+    });
+
+    loadFollows();
+  </script>
 </body>
 
 </html>

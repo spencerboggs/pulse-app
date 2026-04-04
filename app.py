@@ -261,6 +261,63 @@ def create_app() -> Flask:
     def weekly_insights():
         return render_template("weekly_insights.html")
 
+    # ===== FOLLOW / UNFOLLOW INSIGHT ITEMS =====
+    # Requires a Supabase table:
+    #   create table followed_insights (
+    #     id uuid default gen_random_uuid() primary key,
+    #     user_id text not null,
+    #     item_id text not null,
+    #     title text,
+    #     badges text,
+    #     unique(user_id, item_id)
+    #   );
+    @app.route("/insights/follow", methods=["POST"])
+    def follow_insight():
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+        data = request.get_json()
+        item_id = data.get("item_id")
+        title = data.get("title", "")
+        badges = data.get("badges", "")
+        try:
+            supabase.table("followed_insights").upsert({
+                "user_id": str(session["user_id"]),
+                "item_id": item_id,
+                "title": title,
+                "badges": badges
+            }).execute()
+            return jsonify({"status": "followed"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/insights/unfollow", methods=["POST"])
+    def unfollow_insight():
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+        data = request.get_json()
+        item_id = data.get("item_id")
+        try:
+            supabase.table("followed_insights").delete() \
+                .eq("user_id", str(session["user_id"])) \
+                .eq("item_id", item_id) \
+                .execute()
+            return jsonify({"status": "unfollowed"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/insights/followed")
+    def get_followed_insights():
+        if "user_id" not in session:
+            return jsonify({"items": []})
+        try:
+            result = supabase.table("followed_insights") \
+                .select("item_id, title, badges") \
+                .eq("user_id", str(session["user_id"])) \
+                .execute()
+            return jsonify({"items": result.data or []})
+        except Exception:
+            return jsonify({"items": []})
+
     @app.route("/matchmaking")
     def matchmaking():
         return render_template("matchmaking.html")
