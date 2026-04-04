@@ -41,6 +41,14 @@
       <p class="subtitle">Weekly Insights</p>
     </header>
 
+    <section class="card" id="friends-activity-card" style="margin-bottom:16px;display:none;">
+      <h2>Friends' Activity</h2>
+      <ul id="friends-activity-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;"></ul>
+      <p id="friends-activity-empty" class="empty-state" style="display:none;">
+        No friend activity yet — add friends in <a href="{{ url_for('matchmaking') }}">Matchmaking</a>.
+      </p>
+    </section>
+
     <section class="card">
       <h2>Artist News &amp; Rumors</h2>
       <p>Fresh drops, tours, and collabs from the music world.</p>
@@ -285,6 +293,50 @@
     });
 
     loadFollows();
+
+    // Load friends' activity
+    (async function () {
+      try {
+        const res = await fetch("{{ url_for('friends_activity') }}");
+        const data = await res.json();
+        const items = data.activity || [];
+        const card = document.getElementById("friends-activity-card");
+        const list = document.getElementById("friends-activity-list");
+        const empty = document.getElementById("friends-activity-empty");
+
+        if (!items.length) {
+          card.style.display = "block";
+          empty.style.display = "block";
+          return;
+        }
+
+        function timeAgo(isoStr) {
+          if (!isoStr) return "";
+          const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
+          if (diff < 60) return "just now";
+          if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+          if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+          return Math.floor(diff / 86400) + "d ago";
+        }
+
+        items.forEach(item => {
+          const li = document.createElement("li");
+          li.style.cssText = "display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;";
+          const initials = (item.username || "?")[0].toUpperCase();
+          li.innerHTML = `
+            <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,150,29,0.2);border:1px solid rgba(255,150,29,0.35);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;flex-shrink:0;">${initials}</div>
+            <div style="flex:1;min-width:0;">
+              <span style="font-weight:600;color:var(--fg);">@${item.username}</span>
+              <span style="color:rgba(255,246,215,0.7);"> followed </span>
+              <span style="color:var(--fg);">${item.title}</span>
+            </div>
+            <span style="font-size:0.78rem;color:rgba(255,246,215,0.45);flex-shrink:0;">${timeAgo(item.created_at)}</span>`;
+          list.appendChild(li);
+        });
+
+        card.style.display = "block";
+      } catch (e) { /* not logged in */ }
+    })();
   </script>
 </body>
 

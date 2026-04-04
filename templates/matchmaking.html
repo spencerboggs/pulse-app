@@ -212,7 +212,7 @@
           const usernameForProfile = encodeURIComponent(u.username || name);
 
           results.insertAdjacentHTML("beforeend", `
-            <article class="user-card search-card" data-user="${safeId}" data-name="${safeName}" data-handle="${safeHandle}">
+            <article class="user-card search-card" data-user="${safeId}" data-user-id="${safeId}" data-name="${safeName}" data-handle="${safeHandle}">
               <div class="user-header">
                 <div class="user-title">Search result</div>
               </div>
@@ -299,14 +299,19 @@
           const card = actionBtn.closest(".user-card");
           if (!card) return;
 
-          setRequested(actionBtn);
+          const friendId = card.dataset.userId;
+          if (!friendId) {
+            // Suggested placeholder cards have no real ID — just mark requested
+            setRequested(actionBtn);
+            return;
+          }
 
-          // TODO backend:
-          // fetch("/friend/request", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({ user: card.dataset.user })
-          // });
+          setRequested(actionBtn);
+          fetch("/friend/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ friend_id: friendId })
+          }).catch(() => {});
 
           return;
         }
