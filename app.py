@@ -238,6 +238,46 @@ def create_app() -> Flask:
 
         return jsonify({"users": users})
 
+    # ===== ALL USERS (for matchmaking) =====
+    @app.get("/users/all")
+    def all_users():
+        if "user_id" not in session:
+            return jsonify({"users": []})
+
+        uid = str(session["user_id"])
+
+        result = supabase.table("users").select("id, username").execute()
+
+        # Friendships I initiated
+        sent = supabase.table("friendships") \
+            .select("friend_id, status") \
+            .eq("user_id", uid).execute()
+        sent_map = {str(r["friend_id"]): r["status"] for r in (sent.data or [])}
+
+        # Friendships others sent to me
+        received = supabase.table("friendships") \
+            .select("user_id, status") \
+            .eq("friend_id", uid).execute()
+        received_ids = {str(r["user_id"]) for r in (received.data or [])}
+
+        users = []
+        for u in (result.data or []):
+            if str(u.get("id")) == uid:
+                continue
+            other_id = str(u.get("id"))
+            # Skip users who sent me a pending request (they show in requests section)
+            if other_id in received_ids:
+                continue
+            username = u.get("username") or ""
+            users.append({
+                "id": u.get("id"),
+                "username": username,
+                "handle": f"@{username}",
+                "status": sent_map.get(other_id, "none")
+            })
+
+        return jsonify({"users": users})
+
     # ===== TEST ROUTE (Optional) =====
     @app.route("/test_supabase")
     def test_supabase():
@@ -283,9 +323,68 @@ def create_app() -> Flask:
             supabase.table("friendships").upsert({
                 "user_id": str(session["user_id"]),
                 "friend_id": str(friend_id),
-                "status": "accepted"
+                "status": "pending"
             }).execute()
-            return jsonify({"status": "added"})
+            return jsonify({"status": "pending"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/friend/requests")
+    def friend_requests():
+        if "user_id" not in session:
+            return jsonify({"requests": []})
+        try:
+            rows = supabase.table("friendships") \
+                .select("user_id") \
+                .eq("friend_id", str(session["user_id"])) \
+                .eq("status", "pending") \
+                .execute()
+
+            sender_ids = [r["user_id"] for r in (rows.data or [])]
+            if not sender_ids:
+                return jsonify({"requests": []})
+
+            users = supabase.table("users") \
+                .select("id, username") \
+                .in_("id", sender_ids) \
+                .execute()
+
+            return jsonify({"requests": [
+                {"id": u["id"], "username": u["username"]}
+                for u in (users.data or [])
+            ]})
+        except Exception as e:
+            return jsonify({"requests": [], "error": str(e)})
+
+    @app.route("/friend/accept", methods=["POST"])
+    def accept_friend():
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+        data = request.get_json()
+        sender_id = data.get("sender_id")
+        try:
+            supabase.table("friendships") \
+                .update({"status": "accepted"}) \
+                .eq("user_id", str(sender_id)) \
+                .eq("friend_id", str(session["user_id"])) \
+                .execute()
+            return jsonify({"status": "accepted"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/friend/reject", methods=["POST"])
+    def reject_friend():
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+        data = request.get_json()
+        sender_id = data.get("sender_id")
+        try:
+            supabase.table("friendships") \
+                .delete() \
+                .eq("user_id", str(sender_id)) \
+                .eq("friend_id", str(session["user_id"])) \
+                .execute()
+            return jsonify({"status": "rejected"})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -293,48 +392,60 @@ def create_app() -> Flask:
     def friends_activity():
         if "user_id" not in session:
             return jsonify({"activity": []})
-        try:
-            uid = str(session["user_id"])
 
-            # Friends where current user initiated
+        uid = str(session["user_id"])
+
+        # Step 1 — collect accepted friend IDs (both directions)
+        try:
             f1 = supabase.table("friendships").select("friend_id") \
                 .eq("user_id", uid).eq("status", "accepted").execute()
-            # Friends where other user initiated
             f2 = supabase.table("friendships").select("user_id") \
                 .eq("friend_id", uid).eq("status", "accepted").execute()
+        except Exception as e:
+            return jsonify({"activity": [], "debug": f"friendships query failed: {e}"})
 
-            friend_ids = [r["friend_id"] for r in (f1.data or [])]
-            friend_ids += [r["user_id"] for r in (f2.data or [])]
-            friend_ids = list(set(friend_ids))
+        friend_ids = list({r["friend_id"] for r in (f1.data or [])} |
+                          {r["user_id"]   for r in (f2.data or [])})
 
-            if not friend_ids:
-                return jsonify({"activity": []})
+        if not friend_ids:
+            return jsonify({"activity": [], "debug": "no accepted friends found"})
 
-            activity = supabase.table("followed_insights") \
+        # Step 2 — get what those friends have followed
+        try:
+            activity_res = supabase.table("followed_insights") \
                 .select("user_id, title, badges, created_at") \
                 .in_("user_id", friend_ids) \
-                .order("created_at", desc=True) \
                 .limit(20) \
                 .execute()
+        except Exception as e:
+            return jsonify({"activity": [], "debug": f"followed_insights query failed: {e}"})
 
-            unique_ids = list(set(a["user_id"] for a in (activity.data or [])))
+        rows = activity_res.data or []
+        if not rows:
+            return jsonify({"activity": [], "debug": "friends have not followed anything yet"})
+
+        # Sort by created_at descending if present, else leave as-is
+        rows.sort(key=lambda r: r.get("created_at") or "", reverse=True)
+
+        # Step 3 — resolve usernames
+        try:
+            unique_ids = list({r["user_id"] for r in rows})
             users_res = supabase.table("users") \
                 .select("id, username") \
                 .in_("id", unique_ids) \
                 .execute()
             id_to_username = {str(u["id"]): u["username"] for u in (users_res.data or [])}
-
-            result = []
-            for a in (activity.data or []):
-                result.append({
-                    "username": id_to_username.get(str(a["user_id"]), "Someone"),
-                    "title": a["title"],
-                    "badges": a.get("badges", ""),
-                    "created_at": a.get("created_at", "")
-                })
-            return jsonify({"activity": result})
         except Exception as e:
-            return jsonify({"activity": [], "error": str(e)})
+            id_to_username = {}
+
+        result = [{
+            "username": id_to_username.get(str(r["user_id"]), "Someone"),
+            "title": r.get("title", ""),
+            "badges": r.get("badges", ""),
+            "created_at": r.get("created_at", "")
+        } for r in rows]
+
+        return jsonify({"activity": result})
 
     # ===== FOLLOW / UNFOLLOW INSIGHT ITEMS =====
     # Requires a Supabase table:

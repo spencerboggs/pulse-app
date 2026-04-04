@@ -21,25 +21,6 @@
       <section id="requests-list" class="matchmaker-feed" aria-label="Friend Requests">
         <p id="requests-empty" class="empty-state">No new friend requests.</p>
 
-        <article class="user-card request-card" data-user="lena" data-name="Lena Ortiz" data-handle="@lenaverse" hidden>
-          <div class="user-header">
-            <div class="user-title">Sent you a friend request</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P1</div>
-            <div class="user-meta">
-              <div class="user-name">Lena Ortiz</div>
-              <div class="user-handle">@lenaverse</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost req-btn" data-action="accept">Accept</button>
-              <button type="button" class="btn btn-ghost req-btn" data-action="reject">Reject</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Lena Ortiz') }}">View</a>
-            </div>
-          </div>
-        </article>
       </section>
     </section>
 
@@ -68,81 +49,8 @@
       <h2>Suggested Accounts</h2>
 
       <section id="suggested-list" class="matchmaker-feed" aria-label="Suggested Accounts">
-        <article class="user-card suggested-card" data-user="caleb" data-name="Caleb Tran" data-handle="@c0debycaleb">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P2</div>
-            <div class="user-meta">
-              <div class="user-name">Caleb Tran</div>
-              <div class="user-handle">@c0debycaleb</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Caleb Tran') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="maya" data-name="Maya Chen" data-handle="@itsmayac">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P3</div>
-            <div class="user-meta">
-              <div class="user-name">Maya Chen</div>
-              <div class="user-handle">@itsmayac</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Maya Chen') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="dante" data-name="Dante Rivera" data-handle="@dantethebuilder">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P4</div>
-            <div class="user-meta">
-              <div class="user-name">Dante Rivera</div>
-              <div class="user-handle">@dantethebuilder</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Dante Rivera') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="eli" data-name="Eli Navarro" data-handle="@elinavdev">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P5</div>
-            <div class="user-meta">
-              <div class="user-name">Eli Navarro</div>
-              <div class="user-handle">@elinavdev</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Eli Navarro') }}">View</a>
-            </div>
-          </div>
-        </article>
+        <p id="suggested-loading" style="opacity:0.6;padding:8px 4px;">Loading users…</p>
+        <p id="suggested-empty" class="empty-state" hidden>No other users found.</p>
       </section>
 
       <p style="margin-top:16px;">
@@ -165,6 +73,49 @@
         const visible = requestsList.querySelectorAll(".request-card:not([hidden])");
         requestsEmpty.hidden = visible.length !== 0;
       }
+
+      function makeInitials(username) {
+        return (username || "?")[0].toUpperCase();
+      }
+
+      function esc(s) {
+        return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
+      // Fetch real pending requests from the server
+      (async function loadRequests() {
+        try {
+          const res = await fetch("/friend/requests");
+          const data = await res.json();
+          (data.requests || []).forEach(u => {
+            const username = esc(u.username || "");
+            const userId = esc(String(u.id));
+            const initials = makeInitials(u.username);
+            const profileUrl = "/u/" + encodeURIComponent(u.username || userId);
+
+            requestsList.insertAdjacentHTML("beforeend", `
+              <article class="user-card request-card" data-user="${userId}" data-user-id="${userId}" data-name="${username}">
+                <div class="user-header">
+                  <div class="user-title">Sent you a friend request</div>
+                </div>
+                <div class="user-main">
+                  <div class="user-avatar">${initials}</div>
+                  <div class="user-meta">
+                    <div class="user-name">${username}</div>
+                    <div class="user-handle">@${username}</div>
+                  </div>
+                  <div class="user-actions">
+                    <button type="button" class="btn btn-ghost req-btn" data-action="accept">Accept</button>
+                    <button type="button" class="btn btn-ghost req-btn" data-action="reject">Reject</button>
+                    <a class="btn btn-primary" href="${profileUrl}">View</a>
+                  </div>
+                </div>
+              </article>
+            `);
+          });
+          updateRequestsEmpty();
+        } catch (e) { updateRequestsEmpty(); }
+      })();
 
       function setRequested(btn) {
         btn.textContent = "Requested";
@@ -282,15 +233,17 @@
           const reqCard = actionBtn.closest(".request-card");
           if (!reqCard) return;
 
+          const senderId = reqCard.dataset.userId;
+          const url = action === "accept" ? "/friend/accept" : "/friend/reject";
+
           reqCard.hidden = true;
           updateRequestsEmpty();
 
-          // TODO backend:
-          // fetch(action === "accept" ? "/friend/accept" : "/friend/reject", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({ user: reqCard.dataset.user })
-          // });
+          fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sender_id: senderId })
+          }).catch(() => {});
 
           return;
         }
@@ -300,25 +253,36 @@
           if (!card) return;
 
           const friendId = card.dataset.userId;
-          if (!friendId) {
-            // Suggested placeholder cards have no real ID — just mark requested
-            setRequested(actionBtn);
-            return;
-          }
+          if (!friendId) return;
 
-          setRequested(actionBtn);
+          actionBtn.disabled = true;
+          actionBtn.textContent = "Sending…";
+
           fetch("/friend/add", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ friend_id: friendId })
-          }).catch(() => {});
+          })
+            .then(r => r.json())
+            .then(data => {
+              if (data.error) {
+                actionBtn.disabled = false;
+                actionBtn.textContent = "Add Friend";
+                alert("Error: " + data.error);
+              } else {
+                actionBtn.textContent = "Requested";
+                actionBtn.setAttribute("aria-disabled", "true");
+              }
+            })
+            .catch(() => {
+              actionBtn.disabled = false;
+              actionBtn.textContent = "Add Friend";
+            });
 
           return;
         }
       });
 
-      const demoRequest = document.querySelector('.request-card[data-user="lena"]');
-      if (demoRequest) demoRequest.hidden = false;
       updateRequestsEmpty();
     })();
   </script>
@@ -369,5 +333,78 @@
       opacity: 0.9;
     }
   </style>
+
+  <script>
+    // Load all users from the database into the Suggested Accounts section
+    (async function () {
+      const list = document.getElementById("suggested-list");
+      const loading = document.getElementById("suggested-loading");
+      const empty = document.getElementById("suggested-empty");
+
+      function esc(s) {
+        return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
+      function makeInitials(username) {
+        return (username || "?")[0].toUpperCase();
+      }
+
+      try {
+        const res = await fetch("/users/all");
+        const data = await res.json();
+        const users = data.users || [];
+
+        loading.remove();
+
+        if (!users.length) {
+          empty.hidden = false;
+          return;
+        }
+
+        users.forEach(u => {
+          const username = esc(u.username || "");
+          const handle = esc(u.handle || ("@" + u.username));
+          const userId = esc(String(u.id));
+          const initials = makeInitials(u.username);
+          const profileUrl = "/u/" + encodeURIComponent(u.username || userId);
+          const status = u.status || "none"; // "none" | "pending" | "accepted"
+
+          let btnLabel, btnDisabled;
+          if (status === "accepted") {
+            btnLabel = "Friends";
+            btnDisabled = true;
+          } else if (status === "pending") {
+            btnLabel = "Requested";
+            btnDisabled = true;
+          } else {
+            btnLabel = "Add Friend";
+            btnDisabled = false;
+          }
+
+          list.insertAdjacentHTML("beforeend", `
+            <article class="user-card suggested-card" data-user="${userId}" data-user-id="${userId}" data-name="${username}" data-handle="${handle}">
+              <div class="user-header">
+                <div class="user-title">Suggested for you</div>
+              </div>
+              <div class="user-main">
+                <div class="user-avatar">${initials}</div>
+                <div class="user-meta">
+                  <div class="user-name">${username}</div>
+                  <div class="user-handle">${handle}</div>
+                </div>
+                <div class="user-actions">
+                  <button type="button" class="btn btn-ghost add-btn" data-action="add-friend"
+                    ${btnDisabled ? "disabled aria-disabled='true'" : ""}>${btnLabel}</button>
+                  <a class="btn btn-primary" href="${profileUrl}">View</a>
+                </div>
+              </div>
+            </article>
+          `);
+        });
+      } catch (e) {
+        loading.textContent = "Could not load users.";
+      }
+    })();
+  </script>
 </body>
 </html>
