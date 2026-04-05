@@ -2,12 +2,9 @@ from flask import Flask, render_template, redirect, url_for, request, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import os, re, requests
-from werkzeug.utils import secure_filename
-
-# ============================================================
-# ENVIRONMENT LOADING
-# ============================================================
+import os
+import re
+import requests
 
 load_dotenv()
 
@@ -17,21 +14,12 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-
-# ============================================================
-# FLASK APP FACTORY
-# ============================================================
-
 def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = os.getenv("FLASK_SECRET", "SUPER_SECRET_KEY")
 
-    # ============================================================
-    # HELPERS
-    # ============================================================
-
     def slugify(name: str) -> str:
-        return re.sub(r'[^a-z0-9]+', '-', name.lower()).strip('-')
+        return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
     def pick_user_image_by_slug(slug: str) -> str:
         uploads_path = os.path.join(app.static_folder, "uploads")
@@ -39,40 +27,127 @@ def create_app() -> Flask:
 
         exts = (".jpg", ".jpeg", ".png", ".gif", ".webp")
 
-        # Try exact slug match
         for ext in exts:
             candidate = os.path.join(uploads_path, f"{slug}{ext}")
             if os.path.exists(candidate):
                 return url_for("static", filename=f"uploads/{slug}{ext}")
 
-        # fallback to latest upload
         images = [f for f in os.listdir(uploads_path) if f.lower().endswith(exts)]
         if images:
             latest = max(images, key=lambda f: os.path.getmtime(os.path.join(uploads_path, f)))
-            return url_for("static", filename="images/profile_placeholder.png")
+            return url_for("static", filename=f"uploads/{latest}")
 
+        return url_for("static", filename="images/profile_placeholder.png")
 
-    # ============================================================
-    # ROUTES
-    # ============================================================
+    def get_current_user_id():
+        return session.get("user_id")
+
+    def get_full_name(user: dict) -> str:
+        first = (user.get("first_name") or "").strip()
+        last = (user.get("last_name") or "").strip()
+        full = f"{first} {last}".strip()
+        return full if full else (user.get("username") or user.get("email") or "User")
+
+    def get_initials(name: str) -> str:
+        parts = [p for p in name.split() if p]
+        if not parts:
+            return "U"
+        if len(parts) == 1:
+            return parts[0][:2].upper()
+        return (parts[0][0] + parts[1][0]).upper()
+
+    def get_friend_requests_for_user(user_id: int):
+        rows = supabase.table("friends") \
+            .select("*") \
+            .eq("addressee_id", user_id) \
+            .eq("status", "pending") \
+            .order("created_at", desc=True) \
+            .execute()
+
+        requests_list = []
+
+        for row in (rows.data or []):
+            sender_id = row.get("requester_id")
+            if sender_id is None:
+                continue
+
+            user_res = supabase.table("users") \
+                .select("id, username, first_name, last_name, email") \
+                .eq("id", sender_id) \
+                .limit(1) \
+                .execute()
+
+            sender = user_res.data[0] if user_res.data else None
+            if not sender:
+                continue
+
+            display_name = get_full_name(sender)
+
+            requests_list.append({
+                "id": int(sender.get("id")),
+                "username": sender.get("username"),
+                "name": display_name,
+                "handle": f"@{sender.get('username')}" if sender.get("username") else "",
+                "initials": get_initials(display_name),
+            })
+
+        return requests_list
+
+    def get_friends_for_user(user_id: int):
+        result = supabase.table("friends") \
+            .select("*") \
+            .eq("status", "accepted") \
+            .or_(f"requester_id.eq.{user_id},addressee_id.eq.{user_id}") \
+            .execute()
+
+        friends_list = []
+
+        for row in (result.data or []):
+            requester_id = row.get("requester_id")
+            addressee_id = row.get("addressee_id")
+
+            other_id = addressee_id if requester_id == user_id else requester_id
+            if other_id is None:
+                continue
+
+            user_res = supabase.table("users") \
+                .select("id, username, first_name, last_name, email") \
+                .eq("id", other_id) \
+                .limit(1) \
+                .execute()
+
+            user = user_res.data[0] if user_res.data else None
+            if not user:
+                continue
+
+            display_name = get_full_name(user)
+
+            friends_list.append({
+                "id": int(user.get("id")),
+                "username": user.get("username"),
+                "name": display_name,
+                "handle": f"@{user.get('username')}" if user.get("username") else "",
+                "initials": get_initials(display_name),
+                "is_favorite": bool(row.get("is_favorite"))
+            })
+
+        friends_list.sort(key=lambda u: (not u["is_favorite"], (u["name"] or "").lower()))
+        return friends_list
 
     @app.route("/")
     def index():
         return redirect(url_for("auth"))
 
-    # ===== AUTH PAGE (shows login + signup forms) =====
     @app.route("/auth")
     def auth():
-        # Change back to auth.html when auth is set up
         return render_template("auth.html")
 
-    # ===== SIGNUP =====
     @app.route("/signup", methods=["POST"])
     def signup():
-        first_name = request.form["firstName"]
-        last_name = request.form["lastName"]
-        email = request.form["email"]
-        username = request.form["username"]
+        first_name = request.form["firstName"].strip()
+        last_name = request.form["lastName"].strip()
+        email = request.form["email"].strip()
+        username = request.form["username"].strip()
         password = request.form["password"]
         confirm = request.form["confirmPassword"]
 
@@ -80,7 +155,6 @@ def create_app() -> Flask:
             flash("Passwords do not match.", "error")
             return redirect(url_for("auth"))
 
-        # Check if username or email exists
         existing = supabase.table("users") \
             .select("id") \
             .or_(f"username.eq.{username},email.eq.{email}") \
@@ -93,6 +167,8 @@ def create_app() -> Flask:
         password_hash = generate_password_hash(password)
 
         result = supabase.table("users").insert({
+            "first_name": first_name,
+            "last_name": last_name,
             "username": username,
             "email": email,
             "password_hash": password_hash
@@ -100,16 +176,14 @@ def create_app() -> Flask:
 
         user = result.data[0]
 
-        # Login user
         session["user_id"] = user["id"]
         session["username"] = user["username"]
 
         return redirect(url_for("home"))
 
-    # ===== LOGIN =====
     @app.route("/login", methods=["POST"])
     def login():
-        identity = request.form["identity"]
+        identity = request.form["identity"].strip()
         password = request.form["password"]
 
         query = supabase.table("users") \
@@ -129,13 +203,11 @@ def create_app() -> Flask:
 
         return redirect(url_for("home"))
 
-    # ===== LOGOUT =====
     @app.route("/logout")
     def logout():
         session.clear()
         return redirect(url_for("auth"))
 
-    # ===== HOME =====
     @app.route("/home")
     def home():
         if "user_id" not in session:
@@ -143,7 +215,6 @@ def create_app() -> Flask:
 
         return render_template("home.html", username=session["username"])
 
-    # ===== PROFILE =====
     @app.route("/profile")
     def profile():
         if "user_id" not in session:
@@ -157,49 +228,6 @@ def create_app() -> Flask:
             img_url=img_url,
             display_name=session["username"]
         )
-    ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
-
-    def allowed_image(filename: str) -> bool:
-        return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTS
-
-#Used to Change PFP
-    @app.route("/profile/upload-picture", methods=["POST"])
-    def upload_profile_picture():
-        if "user_id" not in session:
-            return redirect(url_for("auth"))
-
-        if "profile_picture" not in request.files:
-            flash("No file selected.", "error")
-            return redirect(url_for("profile"))
-
-        file = request.files["profile_picture"]
-
-        if not file or file.filename == "":
-            flash("No file selected.", "error")
-            return redirect(url_for("profile"))
-
-        if not allowed_image(file.filename):
-            flash("Please upload a PNG, JPG, JPEG, WEBP, or GIF image.", "error")
-            return redirect(url_for("profile"))
-
-        slug = slugify(session["username"])
-        ext = file.filename.rsplit(".", 1)[1].lower()
-
-        uploads_path = os.path.join(app.static_folder, "uploads")
-        os.makedirs(uploads_path, exist_ok=True)
-
-    
-        for old_ext in ALLOWED_IMAGE_EXTS:
-            old_path = os.path.join(uploads_path, f"{slug}.{old_ext}")
-            if os.path.exists(old_path):
-                os.remove(old_path)
-
-        filename = secure_filename(f"{slug}.{ext}")
-        save_path = os.path.join(uploads_path, filename)
-        file.save(save_path)
-
-        flash("Profile picture updated!", "success")
-        return redirect(url_for("profile"))
 
     @app.route("/u/<path:username>")
     def user_profile(username):
@@ -207,73 +235,45 @@ def create_app() -> Flask:
         img_url = pick_user_image_by_slug(slug)
         return render_template("profile_view.html", img_url=img_url, display_name=username)
 
-    # ===== SEARCH USERS (Matchmaking Search) =====
     @app.get("/search_users")
     def search_users():
         if "user_id" not in session:
             return jsonify({"users": []})
 
+        try:
+            current_user_id = int(session.get("user_id"))
+        except (TypeError, ValueError):
+            return jsonify({"users": []})
+
         q = (request.args.get("q") or "").strip()
+
         if not q:
             return jsonify({"users": []})
 
         result = supabase.table("users") \
-            .select("id, username, email") \
-            .or_(f"username.ilike.%{q}%,email.ilike.%{q}%") \
+            .select("id, username, email, first_name, last_name") \
+            .or_(f"username.ilike.%{q}%,email.ilike.%{q}%,first_name.ilike.%{q}%,last_name.ilike.%{q}%") \
             .limit(20) \
             .execute()
 
         users = []
         for u in (result.data or []):
-            if u.get("id") == session.get("user_id"):
+            try:
+                user_id = int(u.get("id"))
+            except (TypeError, ValueError):
                 continue
 
-            username = u.get("username") or ""
+            if user_id == current_user_id:
+                continue
+
+            display_name = get_full_name(u)
+
             users.append({
-                "id": u.get("id"),
-                "username": username,
-                "name": username,
-                "handle": f"@{username}" if username else ""
-            })
-
-        return jsonify({"users": users})
-
-    # ===== ALL USERS (for matchmaking) =====
-    @app.get("/users/all")
-    def all_users():
-        if "user_id" not in session:
-            return jsonify({"users": []})
-
-        uid = str(session["user_id"])
-
-        result = supabase.table("users").select("id, username").execute()
-
-        # Friendships I initiated
-        sent = supabase.table("friendships") \
-            .select("friend_id, status") \
-            .eq("user_id", uid).execute()
-        sent_map = {str(r["friend_id"]): r["status"] for r in (sent.data or [])}
-
-        # Friendships others sent to me
-        received = supabase.table("friendships") \
-            .select("user_id, status") \
-            .eq("friend_id", uid).execute()
-        received_ids = {str(r["user_id"]) for r in (received.data or [])}
-
-        users = []
-        for u in (result.data or []):
-            if str(u.get("id")) == uid:
-                continue
-            other_id = str(u.get("id"))
-            # Skip users who sent me a pending request (they show in requests section)
-            if other_id in received_ids:
-                continue
-            username = u.get("username") or ""
-            users.append({
-                "id": u.get("id"),
-                "username": username,
-                "handle": f"@{username}",
-                "status": sent_map.get(other_id, "none")
+                "id": user_id,
+                "username": u.get("username"),
+                "name": display_name,
+                "handle": f"@{u.get('username')}" if u.get("username") else "",
+                "initials": get_initials(display_name)
             })
 
         return jsonify({"users": users})
@@ -282,9 +282,8 @@ def create_app() -> Flask:
     @app.route("/test_supabase")
     def test_supabase():
         data = supabase.table("profiles").select("*").execute()
-        return {"data": data.data, "error": data.error}
+        return {"data": data.data}
 
-    # ===== OTHER ROUTES =====
     @app.route("/events")
     def events():
         return render_template("events.html")
@@ -531,7 +530,18 @@ def create_app() -> Flask:
 
     @app.route("/matchmaking")
     def matchmaking():
-        return render_template("matchmaking.html")
+        if "user_id" not in session:
+            return redirect(url_for("auth"))
+
+        current_user_id = int(get_current_user_id())
+        friend_requests = get_friend_requests_for_user(current_user_id)
+        friends_list = get_friends_for_user(current_user_id)
+
+        return render_template(
+            "matchmaking.html",
+            friend_requests=friend_requests,
+            friends_list=friends_list
+        )
 
     @app.route("/message")
     def message():
@@ -545,7 +555,6 @@ def create_app() -> Flask:
     def report():
         return render_template("report.html")
 
-    # ===== Spotify Retrieval =====
     @app.route("/spotify/test-top-artists")
     def spotify_test_top_artists():
         auth = request.headers.get("Authorization", "")
@@ -574,7 +583,8 @@ def create_app() -> Flask:
 
     return app
 
+
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)
