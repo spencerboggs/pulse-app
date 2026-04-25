@@ -390,6 +390,7 @@
       const activeItem = document.querySelector(`.conv-item[data-userid="${userId}"]`)
       if (activeItem) activeItem.classList.add("active")
  
+      console.log("currentReceiver:", currentReceiver)
       // load messages & start polling
       loadMessages()
       if (pollInterval) clearInterval(pollInterval)
