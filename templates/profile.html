@@ -21,7 +21,6 @@
       align-items: start;
     }
 
-    /* Sidebar */
     .profile-sidebar {
       position: sticky;
       top: 24px;
@@ -30,7 +29,11 @@
       scrollbar-width: thin;
       scrollbar-color: rgba(255,150,29,0.3) transparent;
     }
-    .profile-sidebar::-webkit-scrollbar { width: 4px; }
+
+    .profile-sidebar::-webkit-scrollbar {
+      width: 4px;
+    }
+
     .profile-sidebar::-webkit-scrollbar-thumb {
       background: rgba(255,150,29,0.3);
       border-radius: 99px;
@@ -42,7 +45,12 @@
       justify-content: space-between;
       margin-bottom: 14px;
     }
-    .friends-header h2 { margin: 0; font-size: 1.05rem; }
+
+    .friends-header h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
     .friends-count {
       font-size: 0.8rem;
       color: rgba(255,246,215,0.5);
@@ -61,10 +69,12 @@
       text-decoration: none;
       transition: background 0.15s;
     }
+
     .friend-row:hover {
       background: rgba(255,255,255,0.05);
       text-decoration: none;
     }
+
     .friend-avatar {
       width: 36px;
       height: 36px;
@@ -79,11 +89,13 @@
       flex-shrink: 0;
       color: var(--fg);
     }
+
     .friend-name {
       font-size: 0.9rem;
       font-weight: 600;
       color: var(--fg);
     }
+
     .friend-handle {
       font-size: 0.78rem;
       color: rgba(255,246,215,0.5);
@@ -96,10 +108,30 @@
       padding: 18px 8px;
     }
 
+    .ai-rec-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .ai-rec-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+
+    .ai-rec-reason {
+      font-size: 0.85rem;
+      color: rgba(255,246,215,0.7);
+    }
+
     @media (max-width: 820px) {
       .profile-layout {
         grid-template-columns: 1fr;
       }
+
       .profile-sidebar {
         position: static;
         max-height: none;
@@ -116,29 +148,29 @@
     </header>
 
     <div class="profile-layout">
-
-      <!-- LEFT: main profile content -->
       <section class="card">
         <h2 id="profile-name">{{ display_name }}</h2>
 
-        <!-- Profile picture upload -->
         <form id="profile-upload-form" action="{{ url_for('upload_profile_picture') }}" method="POST" enctype="multipart/form-data">
-          <input id="profile-file" type="file" name="profile_picture"
-                 accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden />
+          <input id="profile-file" type="file" name="profile_picture" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" hidden />
           <button type="button" id="profile-pic-btn" style="border:0;padding:0;background:transparent;cursor:pointer;">
-            <img id="profile-picture" src="{{ img_url }}" alt="Profile Picture"
-                 class="profile-pic" title="Click to upload a new profile picture" />
+            <img id="profile-picture" src="{{ img_url }}" alt="Profile Picture" class="profile-pic" title="Click to upload a new profile picture" />
           </button>
         </form>
 
         <div class="profile-section">
           <h3>music taste</h3>
           <div class="music-info">
-            <p><span class="info-label">favorite artist:</span> Tyler, The Creator</p>
-            <p><span class="info-label">favorite genre:</span> Neo-Soul</p>
+            <p><span class="info-label">favorite artist:</span> <span id="favorite-artist">Tyler, The Creator</span></p>
+            <p><span class="info-label">favorite genre:</span> <span id="favorite-genre">Neo-Soul</span></p>
             <p><span class="info-label">most listened to song:</span> See You Again</p>
             <p><span class="info-label">favorite album:</span> IGOR</p>
           </div>
+        </div>
+
+        <div class="profile-section" id="ai-recommendations-section">
+          <h3>AI Artist Recommendations</h3>
+          <ul id="ai-recommendations-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;"></ul>
         </div>
 
         <div class="profile-section" id="followed-section" style="display:none;">
@@ -151,7 +183,6 @@
         </p>
       </section>
 
-      <!-- RIGHT: sticky friends sidebar -->
       <aside class="profile-sidebar">
         <div class="card">
           <div class="friends-header">
@@ -165,36 +196,76 @@
           </p>
         </div>
       </aside>
-
-    </div><!-- /.profile-layout -->
+    </div>
   </main>
 
   <script>
-    // Profile picture upload
     const fileInput = document.getElementById("profile-file");
-    const picBtn    = document.getElementById("profile-pic-btn");
-    const form      = document.getElementById("profile-upload-form");
+    const picBtn = document.getElementById("profile-pic-btn");
+    const form = document.getElementById("profile-upload-form");
+
     picBtn.addEventListener("click", () => fileInput.click());
+
     fileInput.addEventListener("change", () => {
-      if (fileInput.files && fileInput.files.length > 0) form.submit();
+      if (fileInput.files && fileInput.files.length > 0) {
+        form.submit();
+      }
     });
 
-    // Query param username override (demo)
     (function () {
       const params = new URLSearchParams(window.location.search);
       const user = params.get("user");
-      if (user) document.getElementById("profile-name").textContent = user;
+      if (user) {
+        document.getElementById("profile-name").textContent = user;
+      }
     })();
 
-    // Load followed insights
+    (async function () {
+      const list = document.getElementById("ai-recommendations-list");
+      const artistEl = document.getElementById("favorite-artist");
+      const genreEl = document.getElementById("favorite-genre");
+
+      if (!list || !artistEl || !genreEl) return;
+
+      try {
+        const favoriteArtist = artistEl.textContent.trim();
+        const favoriteGenre = genreEl.textContent.trim();
+
+        const res = await fetch(
+          `/api/artist-recommendations?artist=${encodeURIComponent(favoriteArtist)}&genre=${encodeURIComponent(favoriteGenre)}`
+        );
+
+        const data = await res.json();
+        const recommendations = data.recommendations || [];
+
+        if (!recommendations.length) {
+          list.innerHTML = "<li>No recommendations available right now.</li>";
+          return;
+        }
+
+        recommendations.forEach(item => {
+          const li = document.createElement("li");
+          li.className = "ai-rec-item";
+          li.innerHTML = `
+            <div class="ai-rec-name">${item.name}</div>
+            <div class="ai-rec-reason">${item.reason}</div>
+          `;
+          list.appendChild(li);
+        });
+      } catch (err) {
+        list.innerHTML = "<li>Could not load recommendations.</li>";
+      }
+    })();
+
     (async function () {
       try {
-        const res  = await fetch("{{ url_for('get_followed_insights') }}");
+        const res = await fetch("{{ url_for('get_followed_insights') }}");
         const data = await res.json();
         const items = data.items || [];
         if (!items.length) return;
 
         const list = document.getElementById("followed-list");
+
         items.forEach(item => {
           const li = document.createElement("li");
           li.style.cssText = "background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;";
@@ -204,18 +275,18 @@
           li.innerHTML = `<div style="font-weight:600;color:var(--fg);font-size:0.95rem;margin-bottom:4px;">${item.title}</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${badges}</div>`;
           list.appendChild(li);
         });
+
         document.getElementById("followed-section").style.display = "block";
       } catch (e) {}
     })();
 
-    // Load friends list
     (async function () {
       const inner = document.getElementById("friends-list-inner");
       const empty = document.getElementById("friends-empty");
       const count = document.getElementById("friends-count");
 
       try {
-        const res  = await fetch("/friends/list");
+        const res = await fetch("/friends/list");
         const data = await res.json();
         const friends = data.friends || [];
 
@@ -227,9 +298,10 @@
         }
 
         friends.forEach(f => {
-          const username = (f.username || "").replace(/</g,"&lt;");
+          const username = (f.username || "").replace(/</g, "&lt;");
           const initials = (f.username || "?")[0].toUpperCase();
           const profileUrl = "/u/" + encodeURIComponent(f.username || f.id);
+
           inner.insertAdjacentHTML("beforeend", `
             <a class="friend-row" href="${profileUrl}">
               <div class="friend-avatar">${initials}</div>

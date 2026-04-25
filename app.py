@@ -11,6 +11,9 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY in .env file")
+
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
@@ -55,6 +58,79 @@ def create_app() -> Flask:
         if len(parts) == 1:
             return parts[0][:2].upper()
         return (parts[0][0] + parts[1][0]).upper()
+
+    def get_ai_artist_recommendations(seed_artist: str = "", seed_genre: str = ""):
+        seed_artist = (seed_artist or "").strip().lower()
+        seed_genre = (seed_genre or "").strip().lower()
+
+        artist_map = {
+            "tyler, the creator": [
+                {"name": "Frank Ocean", "reason": "Alternative R&B and emotionally rich production."},
+                {"name": "Steve Lacy", "reason": "Smooth neo-soul textures with experimental style."},
+                {"name": "Kali Uchis", "reason": "Genre-blending sound with soulful melodies."},
+                {"name": "Childish Gambino", "reason": "Creative, versatile music with strong personality."},
+                {"name": "The Internet", "reason": "A mellow groove-heavy sound that fits neo-soul tastes."}
+            ],
+            "frank ocean": [
+                {"name": "Daniel Caesar", "reason": "Soulful vocals and intimate songwriting."},
+                {"name": "SZA", "reason": "Atmospheric R&B with emotional depth."},
+                {"name": "Giveon", "reason": "Smooth delivery and moody production."},
+                {"name": "Kali Uchis", "reason": "Dreamy vocals and stylish genre fusion."},
+                {"name": "Steve Lacy", "reason": "Alternative R&B with a laid-back feel."}
+            ],
+            "kendrick lamar": [
+                {"name": "J. Cole", "reason": "Strong lyricism and thoughtful themes."},
+                {"name": "Joey Bada$$", "reason": "Sharp bars and classic hip-hop influence."},
+                {"name": "Vince Staples", "reason": "Clever writing with modern production."},
+                {"name": "Denzel Curry", "reason": "Energetic delivery and lyrical versatility."},
+                {"name": "Isaiah Rashad", "reason": "Reflective rap with smooth production."}
+            ]
+        }
+
+        genre_map = {
+            "neo-soul": [
+                {"name": "Erykah Badu", "reason": "A foundational neo-soul artist."},
+                {"name": "Jill Scott", "reason": "Classic neo-soul with rich vocals."},
+                {"name": "The Internet", "reason": "Modern neo-soul and smooth instrumentation."},
+                {"name": "Snoh Aalegra", "reason": "Soulful modern R&B with a moody feel."},
+                {"name": "Hiatus Kaiyote", "reason": "Experimental soul with unique arrangements."}
+            ],
+            "r&b": [
+                {"name": "SZA", "reason": "Modern R&B with emotional storytelling."},
+                {"name": "Summer Walker", "reason": "Smooth contemporary R&B production."},
+                {"name": "Brent Faiyaz", "reason": "Moody and melodic vocal style."},
+                {"name": "Giveon", "reason": "Distinctive voice and polished sound."},
+                {"name": "Daniel Caesar", "reason": "Soulful and intimate songwriting."}
+            ],
+            "rap": [
+                {"name": "Kendrick Lamar", "reason": "High-level lyricism and layered production."},
+                {"name": "J. Cole", "reason": "Thoughtful writing and consistency."},
+                {"name": "A$AP Rocky", "reason": "Creative sound and stylish beats."},
+                {"name": "Vince Staples", "reason": "Sharp delivery and modern edge."},
+                {"name": "Denzel Curry", "reason": "Intense energy and versatility."}
+            ],
+            "pop": [
+                {"name": "Dua Lipa", "reason": "Strong hooks and polished pop production."},
+                {"name": "The Weeknd", "reason": "Pop with a darker atmospheric sound."},
+                {"name": "Ariana Grande", "reason": "Big vocals and modern pop appeal."},
+                {"name": "Olivia Rodrigo", "reason": "Catchy writing with emotional punch."},
+                {"name": "Troye Sivan", "reason": "Clean, stylish modern pop sound."}
+            ]
+        }
+
+        if seed_artist in artist_map:
+            return artist_map[seed_artist]
+
+        if seed_genre in genre_map:
+            return genre_map[seed_genre]
+
+        return [
+            {"name": "Steve Lacy", "reason": "A strong match for modern soulful and alternative tastes."},
+            {"name": "SZA", "reason": "Popular recommendation for R&B and mood-based listeners."},
+            {"name": "The Internet", "reason": "Smooth grooves and relaxed neo-soul sound."},
+            {"name": "Daniel Caesar", "reason": "Soulful vocals with polished production."},
+            {"name": "Childish Gambino", "reason": "Creative genre blending and standout personality."}
+        ]
 
     def get_friend_requests_for_user(user_id: int):
         rows = supabase.table("friends") \
@@ -229,6 +305,40 @@ def create_app() -> Flask:
             display_name=session["username"]
         )
 
+    @app.route("/upload_profile_picture", methods=["POST"])
+    def upload_profile_picture():
+        if "user_id" not in session:
+            return redirect(url_for("auth"))
+
+        file = request.files.get("profile_picture")
+        if not file or file.filename == "":
+            flash("Please choose an image.", "error")
+            return redirect(url_for("profile"))
+
+        allowed_exts = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+        _, ext = os.path.splitext(file.filename.lower())
+
+        if ext not in allowed_exts:
+            flash("Invalid file type.", "error")
+            return redirect(url_for("profile"))
+
+        username = session.get("username", "user")
+        slug = slugify(username)
+
+        uploads_path = os.path.join(app.static_folder, "uploads")
+        os.makedirs(uploads_path, exist_ok=True)
+
+        for old_ext in allowed_exts:
+            old_file = os.path.join(uploads_path, f"{slug}{old_ext}")
+            if os.path.exists(old_file):
+                os.remove(old_file)
+
+        save_path = os.path.join(uploads_path, f"{slug}{ext}")
+        file.save(save_path)
+
+        flash("Profile picture updated.", "success")
+        return redirect(url_for("profile"))
+
     @app.route("/u/<path:username>")
     def user_profile(username):
         slug = slugify(username)
@@ -278,7 +388,21 @@ def create_app() -> Flask:
 
         return jsonify({"users": users})
 
-    # ===== TEST ROUTE (Optional) =====
+    @app.route("/api/artist-recommendations")
+    def artist_recommendations():
+        if "user_id" not in session:
+            return jsonify({"recommendations": []}), 401
+
+        favorite_artist = request.args.get("artist", "Tyler, The Creator")
+        favorite_genre = request.args.get("genre", "Neo-Soul")
+
+        recommendations = get_ai_artist_recommendations(
+            seed_artist=favorite_artist,
+            seed_genre=favorite_genre
+        )
+
+        return jsonify({"recommendations": recommendations})
+
     @app.route("/test_supabase")
     def test_supabase():
         data = supabase.table("profiles").select("*").execute()
@@ -300,16 +424,6 @@ def create_app() -> Flask:
     def weekly_insights():
         return render_template("weekly_insights.html")
 
-    # ===== FRIENDS =====
-    # Requires a Supabase table:
-    #   create table friendships (
-    #     id uuid default gen_random_uuid() primary key,
-    #     user_id text not null,
-    #     friend_id text not null,
-    #     status text default 'accepted',
-    #     created_at timestamptz default now(),
-    #     unique(user_id, friend_id)
-    #   );
     @app.route("/friends/list")
     def friends_list():
         if "user_id" not in session:
@@ -322,7 +436,7 @@ def create_app() -> Flask:
                 .eq("friend_id", uid).eq("status", "accepted").execute()
 
             ids = list({r["friend_id"] for r in (f1.data or [])} |
-                       {r["user_id"]   for r in (f2.data or [])})
+                       {r["user_id"] for r in (f2.data or [])})
             if not ids:
                 return jsonify({"friends": []})
 
@@ -419,7 +533,6 @@ def create_app() -> Flask:
 
         uid = str(session["user_id"])
 
-        # Step 1 — collect accepted friend IDs (both directions)
         try:
             f1 = supabase.table("friendships").select("friend_id") \
                 .eq("user_id", uid).eq("status", "accepted").execute()
@@ -429,12 +542,11 @@ def create_app() -> Flask:
             return jsonify({"activity": [], "debug": f"friendships query failed: {e}"})
 
         friend_ids = list({r["friend_id"] for r in (f1.data or [])} |
-                          {r["user_id"]   for r in (f2.data or [])})
+                          {r["user_id"] for r in (f2.data or [])})
 
         if not friend_ids:
             return jsonify({"activity": [], "debug": "no accepted friends found"})
 
-        # Step 2 — get what those friends have followed
         try:
             activity_res = supabase.table("followed_insights") \
                 .select("user_id, title, badges, created_at") \
@@ -448,10 +560,8 @@ def create_app() -> Flask:
         if not rows:
             return jsonify({"activity": [], "debug": "friends have not followed anything yet"})
 
-        # Sort by created_at descending if present, else leave as-is
         rows.sort(key=lambda r: r.get("created_at") or "", reverse=True)
 
-        # Step 3 — resolve usernames
         try:
             unique_ids = list({r["user_id"] for r in rows})
             users_res = supabase.table("users") \
@@ -459,7 +569,7 @@ def create_app() -> Flask:
                 .in_("id", unique_ids) \
                 .execute()
             id_to_username = {str(u["id"]): u["username"] for u in (users_res.data or [])}
-        except Exception as e:
+        except Exception:
             id_to_username = {}
 
         result = [{
@@ -471,16 +581,6 @@ def create_app() -> Flask:
 
         return jsonify({"activity": result})
 
-    # ===== FOLLOW / UNFOLLOW INSIGHT ITEMS =====
-    # Requires a Supabase table:
-    #   create table followed_insights (
-    #     id uuid default gen_random_uuid() primary key,
-    #     user_id text not null,
-    #     item_id text not null,
-    #     title text,
-    #     badges text,
-    #     unique(user_id, item_id)
-    #   );
     @app.route("/insights/follow", methods=["POST"])
     def follow_insight():
         if "user_id" not in session:
