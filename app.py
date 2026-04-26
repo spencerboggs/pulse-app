@@ -349,6 +349,68 @@ def create_app() -> Flask:
     def concert_map():
         return render_template("concert_map.html")
 
+    @app.get("/api/nearby-concerts")
+    def api_nearby_concerts():
+        lat = request.args.get("lat", type=float)
+        lng = request.args.get("lng", type=float)
+        radius = request.args.get("radius", 25, type=int)
+
+        tm_key = os.getenv("TICKETMASTER_KEY")
+        if tm_key and lat is not None and lng is not None:
+            try:
+                r = requests.get(
+                    "https://app.ticketmaster.com/discovery/v2/events.json",
+                    params={
+                        "apikey": tm_key,
+                        "latlong": f"{lat},{lng}",
+                        "radius": radius,
+                        "unit": "miles",
+                        "classificationName": "music",
+                        "size": 30,
+                        "sort": "date,asc",
+                    },
+                    timeout=8,
+                )
+                if r.ok:
+                    raw = r.json()
+                    events_out = []
+                    for e in raw.get("_embedded", {}).get("events", []):
+                        venues = e.get("_embedded", {}).get("venues", [{}])
+                        venue = venues[0] if venues else {}
+                        loc = venue.get("location", {})
+                        try:
+                            elat = float(loc.get("latitude", 0))
+                            elng = float(loc.get("longitude", 0))
+                        except (TypeError, ValueError):
+                            continue
+                        if not elat and not elng:
+                            continue
+                        images = e.get("images", [])
+                        img = next((i["url"] for i in images if i.get("ratio") == "16_9" and i.get("width", 0) >= 640), None)
+                        events_out.append({
+                            "name": e.get("name", "Concert"),
+                            "date": e.get("dates", {}).get("start", {}).get("localDate", "TBA"),
+                            "time": e.get("dates", {}).get("start", {}).get("localTime", ""),
+                            "venue": venue.get("name", ""),
+                            "city": venue.get("city", {}).get("name", ""),
+                            "lat": elat,
+                            "lng": elng,
+                            "url": e.get("url", "#"),
+                            "image": img,
+                        })
+                    return jsonify({"events": events_out, "source": "ticketmaster"})
+            except Exception:
+                pass
+
+        # Fallback: use app's static events (geocode approximated)
+        static_fallback = [
+            {"name": e["title"], "date": e["date"], "time": "", "venue": e["location"],
+             "city": "Los Angeles", "lat": 34.0195 + i * 0.03, "lng": -118.4912 + i * 0.02,
+             "url": e.get("ticket_url", "#"), "image": None}
+            for i, e in enumerate(EVENTS.values())
+        ]
+        return jsonify({"events": static_fallback, "source": "static"})
+
     @app.route("/settings")
     def settings():
         # Auth check disabled for development - re-enable when Supabase is configured
