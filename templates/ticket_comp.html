@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+ 
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse - Concert Finder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    .search-row {
+      display: flex;
+      gap: 10px;
+      margin: 16px 0;
+    }
+ 
+    .search-row input {
+      flex: 1;
+    }
+ 
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+ 
+    .concert-card {
+      background: rgba(11, 29, 58, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
+    }
+ 
+    .concert-card:hover {
+      border-color: rgba(255, 150, 29, 0.35);
+      transform: translateY(-2px);
+    }
+ 
+    .concert-card.selected {
+      border-color: var(--bg);
+      background: rgba(255, 150, 29, 0.1);
+    }
+ 
+    .concert-checkbox {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--bg);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+ 
+    .concert-info {
+      flex: 1;
+      min-width: 0;
+    }
+ 
+    .concert-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--fg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+ 
+    .concert-meta {
+      font-size: 0.85rem;
+      color: var(--muted);
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+ 
+    .concert-price {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--bg);
+      flex-shrink: 0;
+      text-align: right;
+    }
+ 
+    /* ── Compare Panel ── */
+    .compare-bar {
+      position: sticky;
+      bottom: 16px;
+      margin-top: 24px;
+      background: rgba(11, 29, 58, 0.97);
+      border: 1px solid rgba(255, 150, 29, 0.4);
+      border-radius: 16px;
+      padding: 16px;
+      display: none;
+    }
+ 
+    .compare-bar.visible {
+      display: block;
+    }
+ 
+    .compare-bar h3 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      color: var(--fg);
+    }
+ 
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+ 
+    .compare-col {
+      background: rgba(255, 246, 215, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px;
+    }
+ 
+    .compare-col-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--fg);
+      margin-bottom: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+ 
+    .compare-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.85rem;
+    }
+ 
+    .compare-row:last-child {
+      border-bottom: none;
+    }
+ 
+    .compare-label {
+      color: var(--muted);
+      opacity: 0.7;
+    }
+ 
+    .compare-value {
+      color: var(--fg);
+      font-weight: 600;
+      text-align: right;
+    }
+ 
+    .compare-value.better {
+      color: #4ade80;
+    }
+ 
+    .compare-value.worse {
+      color: #f87171;
+    }
+ 
+    .compare-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      justify-content: flex-end;
+    }
+ 
+    /* ── States ── */
+    .state-msg {
+      text-align: center;
+      padding: 32px 12px;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+ 
+    .loading-dots::after {
+      content: '...';
+      animation: dots 1s steps(3, end) infinite;
+    }
+ 
+    @keyframes dots {
+      0%, 100% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+    }
+  </style>
+</head>
+ 
+<body>
+  <main class="container">
+    <header class="brand">
+      <div class="logo">Pulse</div>
+      <p class="subtitle">Concert Finder</p>
+    </header>
+ 
+    <section class="card">
+      <h2>Find Concerts</h2>
+ 
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="Search artist, band, or genre…">
+        <button class="btn btn-primary" id="searchBtn">Search</button>
+      </div>
+ 
+      <p style="font-size:0.85rem; opacity:0.6; margin:0 0 8px;">
+        Select 2 concerts to compare price &amp; date.
+      </p>
+ 
+      <div class="results-grid" id="resultsGrid">
+        <div class="state-msg">Search for a concert above to get started.</div>
+      </div>
+ 
+      <!-- Compare panel -->
+      <div class="compare-bar" id="compareBar">
+        <h3>📊 Comparing 2 Concerts</h3>
+        <div class="compare-grid" id="compareGrid"></div>
+        <div class="compare-actions">
+          <button class="btn btn-ghost" id="clearCompare">Clear</button>
+        </div>
+      </div>
+ 
+    </section>
+ 
+    <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+  </main>
+ 
+  <script>
+    // ── State ────────────────────────────────────────────
+    let allConcerts = []
+    let selected = []   // max 2
+ 
+    // ── Elements ─────────────────────────────────────────
+    const searchInput = document.getElementById("searchInput")
+    const searchBtn   = document.getElementById("searchBtn")
+    const resultsGrid = document.getElementById("resultsGrid")
+    const compareBar  = document.getElementById("compareBar")
+    const compareGrid = document.getElementById("compareGrid")
+ 
+    // ── Search ───────────────────────────────────────────
+    searchBtn.addEventListener("click", doSearch)
+    searchInput.addEventListener("keydown", e => { if (e.key === "Enter") doSearch() })
+ 
+    async function doSearch() {
+      const q = searchInput.value.trim()
+      if (!q) return
+ 
+      resultsGrid.innerHTML = `<div class="state-msg loading-dots">Searching</div>`
+      selected = []
+      updateCompareBar()
+ 
+      try {
+        const res  = await fetch("/api/concerts?q=" + encodeURIComponent(q))
+        const data = await res.json()
+ 
+        if (!data.concerts || data.concerts.length === 0) {
+          resultsGrid.innerHTML = `<div class="state-msg">No concerts found for "${q}".</div>`
+          return
+        }
+ 
+        allConcerts = data.concerts
+        renderResults(allConcerts)
+ 
+      } catch (err) {
+        resultsGrid.innerHTML = `<div class="state-msg">Something went wrong. Try again.</div>`
+        console.error(err)
+      }
+    }
+ 
+    // ── Render results ───────────────────────────────────
+    function renderResults(concerts) {
+      resultsGrid.innerHTML = ""
+ 
+      concerts.forEach(c => {
+        const card = document.createElement("div")
+        card.className = "concert-card"
+        card.dataset.id = c.id
+ 
+        const isSelected = selected.find(s => s.id === c.id)
+        if (isSelected) card.classList.add("selected")
+ 
+        card.innerHTML = `
+          <input class="concert-checkbox" type="checkbox" ${isSelected ? "checked" : ""}>
+          <div class="concert-info">
+            <div class="concert-name">${c.name}</div>
+            <div class="concert-meta">📅 ${c.date} &nbsp;•&nbsp; 📍 ${c.venue}</div>
+          </div>
+          <div class="concert-price">${c.price}</div>
+        `
+ 
+        card.addEventListener("click", () => toggleSelect(c, card))
+        resultsGrid.appendChild(card)
+      })
+    }
+ 
+    // ── Select / deselect ────────────────────────────────
+    function toggleSelect(concert, card) {
+      const idx = selected.findIndex(s => s.id === concert.id)
+ 
+      if (idx !== -1) {
+        // deselect
+        selected.splice(idx, 1)
+        card.classList.remove("selected")
+        card.querySelector(".concert-checkbox").checked = false
+      } else {
+        if (selected.length >= 2) {
+          alert("You can only compare 2 concerts at a time. Deselect one first.")
+          return
+        }
+        selected.push(concert)
+        card.classList.add("selected")
+        card.querySelector(".concert-checkbox").checked = true
+      }
+ 
+      updateCompareBar()
+    }
+ 
+    // ── Compare bar ──────────────────────────────────────
+    function updateCompareBar() {
+      if (selected.length < 2) {
+        compareBar.classList.remove("visible")
+        return
+      }
+ 
+      compareBar.classList.add("visible")
+ 
+      const [a, b] = selected
+ 
+      // parse min prices for comparison (use Infinity if unavailable)
+      const priceA = parseMinPrice(a.price)
+      const priceB = parseMinPrice(b.price)
+ 
+      // parse dates for comparison
+      const dateA = new Date(a.date)
+      const dateB = new Date(b.date)
+ 
+      compareGrid.innerHTML = `
+        ${compareCol(a, priceA, dateA, priceB, dateB, "left")}
+        ${compareCol(b, priceB, dateB, priceA, dateA, "right")}
+      `
+    }
+ 
+    function compareCol(concert, myPrice, myDate, otherPrice, otherDate, side) {
+      const priceBetter = myPrice !== Infinity && myPrice <= otherPrice
+      const dateSooner  = myDate <= otherDate
+ 
+      const priceClass = myPrice === Infinity ? "" : (priceBetter ? "better" : "worse")
+      const dateClass  = dateSooner ? "better" : "worse"
+ 
+      return `
+        <div class="compare-col">
+          <div class="compare-col-name">${concert.name}</div>
+          <div class="compare-row">
+            <span class="compare-label">📅 Date</span>
+            <span class="compare-value ${dateClass}">${concert.date}</span>
+          </div>
+          <div class="compare-row">
+            <span class="compare-label">💰 Price</span>
+            <span class="compare-value ${priceClass}">${concert.price}</span>
+          </div>
+          <div class="compare-row">
+            <span class="compare-label">📍 Venue</span>
+            <span class="compare-value">${concert.venue}</span>
+          </div>
+        </div>
+      `
+    }
+ 
+    function parseMinPrice(priceStr) {
+      // extract first number from strings like "$25 - $80" or "From $30"
+      const match = priceStr.match(/[\d.]+/)
+      return match ? parseFloat(match[0]) : Infinity
+    }
+ 
+    // ── Clear compare ────────────────────────────────────
+    document.getElementById("clearCompare").addEventListener("click", () => {
+      selected = []
+      updateCompareBar()
+      // uncheck all cards
+      document.querySelectorAll(".concert-card").forEach(card => {
+        card.classList.remove("selected")
+        card.querySelector(".concert-checkbox").checked = false
+      })
+    })
+  </script>
+</body>
+ 
+</html>
