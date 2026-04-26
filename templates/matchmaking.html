@@ -8,36 +8,10 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <style>
     .matchmaking-page {
-      max-width: 1200px;
+      max-width: 860px;
       margin: 12vh auto 0;
       padding: 0 24px 40px;
     }
-
-    .matchmaking-layout {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 20px;
-      align-items: start;
-    }
-
-    /* Sticky right panel */
-    .matchmaking-sidebar {
-      position: sticky;
-      top: 24px;
-      max-height: calc(100vh - 48px);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,150,29,0.3) transparent;
-    }
-    .matchmaking-sidebar::-webkit-scrollbar { width: 4px; }
-    .matchmaking-sidebar::-webkit-scrollbar-thumb {
-      background: rgba(255,150,29,0.3);
-      border-radius: 99px;
-    }
-
     .search-row {
       display: flex;
       gap: 10px;
@@ -56,18 +30,42 @@
       outline: none;
     }
     .search-input::placeholder { opacity: 0.6; }
-
     .empty-state {
-      opacity: 0.75;
+      opacity: 0.65;
       padding: 10px 4px;
       font-size: 0.9rem;
     }
     .req-btn  { min-width: 80px; }
     .add-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 
-    @media (max-width: 860px) {
-      .matchmaking-layout { grid-template-columns: 1fr; }
-      .matchmaking-sidebar { position: static; max-height: none; }
+    /* invite box */
+    .invite-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 12px 16px;
+    }
+    .invite-link-text {
+      flex: 1;
+      font-size: 0.88rem;
+      opacity: 0.8;
+      word-break: break-all;
+    }
+    .copy-toast {
+      font-size: 0.8rem;
+      color: #6dffb8;
+      opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+    .copy-toast.show { opacity: 1; }
+
+    @media (max-width: 600px) {
+      .matchmaking-page { padding: 0 12px 32px; }
     }
   </style>
 </head>
@@ -79,136 +77,43 @@
       <p class="subtitle">Matchmaking</p>
     </header>
 
-    <section class="card">
-      <h2>Friend Requests</h2>
+    <!-- INVITE LINK -->
+    <section class="card" style="margin-bottom:16px;">
+      <h2>Invite a Friend</h2>
+      <p style="opacity:0.75;font-size:0.9rem;">Share your invite link and grow your music network.</p>
+      <div class="invite-box">
+        <span class="invite-link-text" id="inviteLinkText">http://localhost:5000</span>
+        <span class="copy-toast" id="copyToast">Copied!</span>
+        <button class="btn btn-primary" id="copyInviteBtn">Copy Link</button>
+      </div>
+    </section>
 
+    <!-- FRIEND REQUESTS -->
+    <section class="card" style="margin-bottom:16px;">
+      <h2>Friend Requests</h2>
       <section id="requests-list" class="matchmaker-feed" aria-label="Friend Requests">
         <p id="requests-empty" class="empty-state">No new friend requests.</p>
-
-        <article class="user-card request-card" data-user="lena" data-name="Lena Ortiz" data-handle="@lenaverse" hidden>
-          <div class="user-header">
-            <div class="user-title">Sent you a friend request</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P1</div>
-            <div class="user-meta">
-              <div class="user-name">Lena Ortiz</div>
-              <div class="user-handle">@lenaverse</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost req-btn" data-action="accept">Accept</button>
-              <button type="button" class="btn btn-ghost req-btn" data-action="reject">Reject</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Lena Ortiz') }}">View</a>
-            </div>
-          </div>
-        </article>
       </section>
     </section>
 
-    <section class="card" style="margin-top:16px;">
+    <!-- SEARCH -->
+    <section class="card" style="margin-bottom:16px;">
       <h2>Find a Friend</h2>
-
       <div class="search-row">
-        <input
-          id="friendSearch"
-          class="search-input"
-          type="text"
-          placeholder="Search by name, username, or @handle"
-          autocomplete="off"
-          aria-label="Search friends"
-        />
+        <input id="friendSearch" class="search-input" type="text"
+          placeholder="Search by name, username, or @handle" autocomplete="off" />
         <button id="clearSearch" type="button" class="btn btn-ghost">Clear</button>
       </div>
-
-      <p class="helper-text" style="display:none;"></p>
-
-      <section id="search-results" class="matchmaker-feed" style="margin-top:14px;" aria-label="Search Results"></section>
+      <section id="search-results" class="matchmaker-feed" style="margin-top:14px;"></section>
       <p id="search-empty" class="empty-state" hidden>No results found.</p>
     </section>
 
-    <section class="card" style="margin-top:16px;">
+    <!-- SUGGESTED -->
+    <section class="card">
       <h2>Suggested Accounts</h2>
-
       <section id="suggested-list" class="matchmaker-feed" aria-label="Suggested Accounts">
-        <article class="user-card suggested-card" data-user="caleb" data-name="Caleb Tran" data-handle="@c0debycaleb">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P2</div>
-            <div class="user-meta">
-              <div class="user-name">Caleb Tran</div>
-              <div class="user-handle">@c0debycaleb</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Caleb Tran') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="maya" data-name="Maya Chen" data-handle="@itsmayac">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P3</div>
-            <div class="user-meta">
-              <div class="user-name">Maya Chen</div>
-              <div class="user-handle">@itsmayac</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Maya Chen') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="dante" data-name="Dante Rivera" data-handle="@dantethebuilder">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P4</div>
-            <div class="user-meta">
-              <div class="user-name">Dante Rivera</div>
-              <div class="user-handle">@dantethebuilder</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Dante Rivera') }}">View</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="user-card suggested-card" data-user="eli" data-name="Eli Navarro" data-handle="@elinavdev">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-
-          <div class="user-main">
-            <div class="user-avatar">P5</div>
-            <div class="user-meta">
-              <div class="user-name">Eli Navarro</div>
-              <div class="user-handle">@elinavdev</div>
-            </div>
-
-            <div class="user-actions">
-              <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Eli Navarro') }}">View</a>
-            </div>
-          </div>
-        </article>
+        <p id="suggested-loading" class="empty-state">Loading suggestions...</p>
       </section>
-
       <p style="margin-top:16px;">
         <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
       </p>
@@ -216,204 +121,212 @@
   </main>
 
   <script>
-    (function () {
-      const requestsList = document.getElementById("requests-list");
-      const requestsEmpty = document.getElementById("requests-empty");
+  (function () {
+    // ── Helpers ──────────────────────────────────────────────
+    function esc(s) {
+      return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+    }
+    function initials(name) {
+      const p = (name||"").trim().split(/\s+/).filter(Boolean);
+      return ((p[0]||"U")[0] + ((p[1]||"")[0]||"")).toUpperCase();
+    }
+    function getEl(id) { return document.getElementById(id); }
 
-      const searchInput = document.getElementById("friendSearch");
-      const clearBtn = document.getElementById("clearSearch");
-      const results = document.getElementById("search-results");
-      const searchEmpty = document.getElementById("search-empty");
+    // ── Invite link ──────────────────────────────────────────
+    const INVITE_URL = "http://localhost:5000";
+    getEl("inviteLinkText").textContent = INVITE_URL;
+    getEl("copyInviteBtn").addEventListener("click", function () {
+      navigator.clipboard.writeText(INVITE_URL).then(function () {
+        const toast = getEl("copyToast");
+        toast.classList.add("show");
+        setTimeout(function () { toast.classList.remove("show"); }, 2000);
+      });
+    });
 
-      function updateRequestsEmpty() {
-        const visible = requestsList.querySelectorAll(".request-card:not([hidden])");
-        requestsEmpty.hidden = visible.length !== 0;
+    // ── Friend Requests ──────────────────────────────────────
+    const requestsList = getEl("requests-list");
+    const requestsEmpty = getEl("requests-empty");
+
+    function updateRequestsEmpty() {
+      const visible = requestsList.querySelectorAll(".request-card");
+      requestsEmpty.hidden = visible.length > 0;
+    }
+
+    function renderRequest(u) {
+      const name = esc(u.name || u.username || "User");
+      const handle = esc(u.handle || "@" + u.username);
+      const id = esc(String(u.id));
+      const inits = esc(u.initials || initials(u.name || u.username || "U"));
+
+      const el = document.createElement("article");
+      el.className = "user-card request-card";
+      el.dataset.userid = id;
+      el.innerHTML = `
+        <div class="user-header"><div class="user-title">Sent you a friend request</div></div>
+        <div class="user-main">
+          <div class="user-avatar">${inits}</div>
+          <div class="user-meta">
+            <div class="user-name">${name}</div>
+            <div class="user-handle">${handle}</div>
+          </div>
+          <div class="user-actions">
+            <button class="btn btn-ghost req-btn" data-action="accept">Accept</button>
+            <button class="btn btn-ghost req-btn" data-action="reject">Reject</button>
+          </div>
+        </div>`;
+      requestsList.appendChild(el);
+    }
+
+    async function loadRequests() {
+      try {
+        const res = await fetch("/api/friend-requests");
+        const data = await res.json();
+        (data.requests || []).forEach(renderRequest);
+      } catch (_) {}
+      updateRequestsEmpty();
+    }
+    loadRequests();
+
+    // ── Suggested users ──────────────────────────────────────
+    const suggestedList = getEl("suggested-list");
+    const suggestedLoading = getEl("suggested-loading");
+
+    function renderSuggested(u) {
+      const name = esc(u.name || u.username || "User");
+      const handle = esc(u.handle || "@" + u.username);
+      const id = esc(String(u.id));
+      const inits = esc(u.initials || initials(u.name || u.username || "U"));
+      const btnLabel = u.requested ? "Requested" : "Add Friend";
+      const btnDisabled = u.requested ? "disabled" : "";
+
+      const el = document.createElement("article");
+      el.className = "user-card suggested-card";
+      el.dataset.userid = id;
+      el.innerHTML = `
+        <div class="user-header"><div class="user-title">Suggested for you</div></div>
+        <div class="user-main">
+          <div class="user-avatar">${inits}</div>
+          <div class="user-meta">
+            <div class="user-name">${name}</div>
+            <div class="user-handle">${handle}</div>
+          </div>
+          <div class="user-actions">
+            <button class="btn btn-ghost add-btn" data-action="add-friend" ${btnDisabled}>${btnLabel}</button>
+            <a class="btn btn-primary" href="/u/${encodeURIComponent(u.username || u.name)}">View</a>
+          </div>
+        </div>`;
+      suggestedList.appendChild(el);
+    }
+
+    async function loadSuggested() {
+      try {
+        const res = await fetch("/api/suggested-users");
+        const data = await res.json();
+        suggestedLoading.remove();
+        if (!data.users || !data.users.length) {
+          suggestedList.insertAdjacentHTML("beforeend", '<p class="empty-state">No suggestions right now.</p>');
+          return;
+        }
+        data.users.forEach(renderSuggested);
+      } catch (_) {
+        suggestedLoading.textContent = "Could not load suggestions.";
+      }
+    }
+    loadSuggested();
+
+    // ── Search ───────────────────────────────────────────────
+    const searchInput = getEl("friendSearch");
+    const searchResults = getEl("search-results");
+    const searchEmpty = getEl("search-empty");
+
+    function renderSearchResult(u) {
+      const name = esc(u.name || u.username || "User");
+      const handle = esc(u.handle || "@" + (u.username||""));
+      const id = esc(String(u.id));
+      const inits = esc(u.initials || initials(u.name || u.username || "U"));
+      searchResults.insertAdjacentHTML("beforeend", `
+        <article class="user-card search-card" data-userid="${id}">
+          <div class="user-header"><div class="user-title">Search result</div></div>
+          <div class="user-main">
+            <div class="user-avatar">${inits}</div>
+            <div class="user-meta">
+              <div class="user-name">${name}</div>
+              <div class="user-handle">${handle}</div>
+            </div>
+            <div class="user-actions">
+              <button class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
+              <a class="btn btn-primary" href="/u/${encodeURIComponent(u.username||u.name)}">View</a>
+            </div>
+          </div>
+        </article>`);
+    }
+
+    let timer = null;
+    searchInput.addEventListener("input", function () {
+      clearTimeout(timer);
+      const q = searchInput.value.trim();
+      if (!q) { searchResults.innerHTML = ""; searchEmpty.hidden = true; return; }
+      timer = setTimeout(async function () {
+        try {
+          const res = await fetch("/search_users?q=" + encodeURIComponent(q));
+          const data = await res.json();
+          searchResults.innerHTML = "";
+          if (!data.users || !data.users.length) { searchEmpty.hidden = false; return; }
+          searchEmpty.hidden = true;
+          data.users.forEach(renderSearchResult);
+        } catch (_) { searchEmpty.hidden = false; }
+      }, 200);
+    });
+
+    getEl("clearSearch").addEventListener("click", function () {
+      searchInput.value = "";
+      searchResults.innerHTML = "";
+      searchEmpty.hidden = true;
+      searchInput.focus();
+    });
+
+    // ── Button actions ───────────────────────────────────────
+    document.addEventListener("click", async function (e) {
+      const btn = e.target.closest("[data-action]");
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const card = btn.closest(".user-card");
+
+      if (action === "accept") {
+        const id = card && card.dataset.userid;
+        await fetch("/api/friend-accept", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requester_id: id })
+        });
+        card.remove();
+        updateRequestsEmpty();
       }
 
-      function setRequested(btn) {
+      if (action === "reject") {
+        const id = card && card.dataset.userid;
+        await fetch("/api/friend-reject", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requester_id: id })
+        });
+        card.remove();
+        updateRequestsEmpty();
+      }
+
+      if (action === "add-friend") {
+        const id = card && card.dataset.userid;
         btn.textContent = "Requested";
         btn.disabled = true;
-        btn.setAttribute("aria-disabled", "true");
-      }
-
-      function esc(s) {
-        return (s || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
-
-      function makeInitials(name) {
-        const parts = (name || "").trim().split(/\s+/).filter(Boolean);
-        const a = (parts[0] || "U")[0] || "U";
-        const b = (parts[1] || "")[0] || "";
-        return (a + b).toUpperCase();
-      }
-
-      function renderSearch(users) {
-        results.innerHTML = "";
-        if (!users || !users.length) { searchEmpty.hidden = false; return; }
-        searchEmpty.hidden = true;
-
-        users.forEach(function (u) {
-          const name = u.name || u.username || "User";
-          const handle = u.handle || (u.username ? ("@" + u.username) : "");
-          const id = u.id || u.username || name;
-          const initials = u.initials || makeInitials(name);
-
-          const safeName = esc(name);
-          const safeHandle = esc(handle);
-          const safeId = esc(String(id));
-          const safeInitials = esc(initials);
-
-          const usernameForProfile = encodeURIComponent(u.username || name);
-
-          results.insertAdjacentHTML("beforeend", `
-            <article class="user-card search-card" data-user="${safeId}" data-name="${safeName}" data-handle="${safeHandle}">
-              <div class="user-header">
-                <div class="user-title">Search result</div>
-              </div>
-              <div class="user-main">
-                <div class="user-avatar">${safeInitials}</div>
-                <div class="user-meta">
-                  <div class="user-name">${safeName}</div>
-                  <div class="user-handle">${safeHandle}</div>
-                </div>
-                <div class="user-actions">
-                  <button type="button" class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-                  <a class="btn btn-primary" href="/profile/${usernameForProfile}">View</a>
-                </div>
-              </div>
-            </article>`);
+        await fetch("/api/add-friend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ friend_id: id })
         });
       }
-
-      let timer = null;
-      async function doSearch() {
-        const q = (searchInput.value || "").trim();
-        if (!q) { results.innerHTML = ""; searchEmpty.hidden = true; return; }
-        try {
-          const r = await fetch(`/search_users?q=${encodeURIComponent(q)}`, {
-            headers: { "Accept": "application/json" }
-          });
-
-          if (!r.ok) {
-            renderSearch([]);
-            return;
-          }
-
-          const data = await r.json();
-          renderSearch(data.users || []);
-        } catch (err) {
-          renderSearch([]);
-        }
-      }
-
-      searchInput.addEventListener("input", function () {
-        clearTimeout(timer);
-        timer = setTimeout(doSearch, 200);
-      });
-
-      clearBtn.addEventListener("click", function () {
-        searchInput.value = "";
-        results.innerHTML = "";
-        searchEmpty.hidden = true;
-        searchInput.focus();
-      });
-
-      document.addEventListener("click", function (e) {
-        const actionBtn = e.target.closest("[data-action]");
-        if (!actionBtn) return;
-
-        const action = actionBtn.dataset.action;
-
-        if (action === "accept" || action === "reject") {
-          const reqCard = actionBtn.closest(".request-card");
-          if (!reqCard) return;
-
-          reqCard.hidden = true;
-          updateRequestsEmpty();
-
-          // TODO backend:
-          // fetch(action === "accept" ? "/friend/accept" : "/friend/reject", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({ user: reqCard.dataset.user })
-          // });
-
-          return;
-        }
-
-        if (action === "add-friend") {
-          const card = btn.closest(".user-card");
-          if (!card) return;
-
-          setRequested(actionBtn);
-
-          // TODO backend:
-          // fetch("/friend/request", {
-          //   method: "POST",
-          //   headers: { "Content-Type": "application/json" },
-          //   body: JSON.stringify({ user: card.dataset.user })
-          // });
-
-          return;
-        }
-      });
-
-      const demoRequest = document.querySelector('.request-card[data-user="lena"]');
-      if (demoRequest) demoRequest.hidden = false;
-      updateRequestsEmpty();
-    })();
+    });
+  })();
   </script>
-
-  <style>
-    .empty-state {
-      opacity: 0.75;
-      padding: 12px 6px;
-    }
-
-    .req-btn {
-      min-width: 92px;
-    }
-
-    .add-btn[disabled] {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
-    .search-row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-top: 10px;
-    }
-
-    .search-input {
-      flex: 1;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      color: inherit;
-      outline: none;
-    }
-
-    .search-input::placeholder {
-      opacity: 0.7;
-    }
-
-    .helper-text {
-      margin-top: 10px;
-      opacity: 0.75;
-      font-size: 0.95rem;
-    }
-
-    code {
-      opacity: 0.9;
-    }
-  </style>
 </body>
 </html>

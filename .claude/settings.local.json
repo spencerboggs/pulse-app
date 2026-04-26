@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python app.py)",
+      "Bash(python -c \"from app import create_app\")",
+      "Bash(python -c \"import dotenv\")",
+      "Bash(python -c \"import flask\")",
+      "Bash(python -c \"import supabase\")",
+      "Bash(curl -s http://localhost:5000/)",
+      "Bash(curl -s http://localhost:5000/message)",
+      "Bash(curl -s http://localhost:5000/api/get_messages/1)",
+      "Bash(curl -s -X POST http://localhost:5000/api/send_message -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(curl -s -X POST http://localhost:5000/api/send_message -H \"Content-Type: application/json\" -d '{\"recipient_id\":1,\"body\":\"test\"}')",
+      "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\('OK - routes:', sorted\\([r.rule for r in app.url_map.iter_rules\\(\\) if '/api/' in r.rule or r.rule in ['/invite','/matchmaking','/weekly-insights']]\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\('OK'\\)\")"
+    ]
+  }
+}
