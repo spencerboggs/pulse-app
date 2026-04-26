@@ -1,124 +1,217 @@
 <!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>pulse - Weekly Insights</title>
+  <title>Pulse — Weekly Insights</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    /* Widen page for two-column layout */
-    .insights-container {
-      max-width: 1200px;
-      margin: 12vh auto 0;
-      padding: 0 24px;
+    .insights-page {
+      max-width: 1100px;
+      margin: 10vh auto 0;
+      padding: 0 24px 60px;
     }
 
+    /* ── Two-column layout ── */
     .insights-layout {
       display: grid;
       grid-template-columns: 1fr 340px;
       gap: 20px;
       align-items: start;
+      margin-top: 20px;
     }
 
-    /* Sidebar sticks while scrolling the news */
-    .activity-sidebar {
+    @media (max-width: 860px) {
+      .insights-layout { grid-template-columns: 1fr; }
+      .insights-sidebar { display: contents; }
+    }
+
+    @media (max-width: 500px) {
+      .insights-page { padding: 0 12px 40px; }
+    }
+
+    /* ── Sidebar sticky ── */
+    .insights-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
       position: sticky;
-      top: 24px;
-      max-height: calc(100vh - 48px);
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,150,29,0.3) transparent;
+      top: 20px;
     }
 
-    .activity-sidebar::-webkit-scrollbar { width: 4px; }
-    .activity-sidebar::-webkit-scrollbar-thumb {
-      background: rgba(255,150,29,0.3);
-      border-radius: 99px;
+    /* ── News list ── */
+    .news-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+      display: grid;
+      gap: 14px;
     }
+
+    .news-item {
+      background: rgba(11, 29, 58, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+    }
+
+    .news-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+      border-color: rgba(255,150,29,0.35);
+    }
+
+    .news-inner { padding: 16px 18px; }
+
+    .news-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .news-title { font-size: 1rem; font-weight: 700; margin: 0 0 6px; color: var(--fg); }
+    .news-summary { font-size: 0.87rem; opacity: 0.82; margin: 0; line-height: 1.5; }
+
+    .heart-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.6rem;
+      cursor: pointer;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: transform 0.15s;
+      padding: 0;
+    }
+    .heart-btn:hover { transform: scale(1.15); }
+    .heart-btn.active { color: #ff5c8a; }
+
+    .news-footer {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px 14px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* ── Activity feed ── */
+    .activity-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 
     .activity-item {
       display: flex;
-      align-items: flex-start;
       gap: 10px;
-      padding: 10px 12px;
+      align-items: flex-start;
       background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.07);
       border-radius: 12px;
+      padding: 12px;
     }
 
     .activity-avatar {
       width: 34px;
       height: 34px;
       border-radius: 50%;
-      background: rgba(255,150,29,0.18);
-      border: 1px solid rgba(255,150,29,0.35);
+      background: var(--bg);
+      color: var(--accent-contrast);
+      font-size: 0.72rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 0.82rem;
       flex-shrink: 0;
     }
 
-    .activity-text {
+    .activity-photo-thumb {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .activity-text { font-size: 0.84rem; line-height: 1.4; }
+    .activity-user { font-weight: 700; }
+    .activity-title { opacity: 0.85; }
+    .activity-time { font-size: 0.74rem; opacity: 0.5; margin-top: 3px; }
+    .activity-empty { font-size: 0.87rem; opacity: 0.6; padding: 6px 0; }
+
+    /* ── Photo upload ── */
+    .upload-drop {
+      border: 2px dashed rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      margin-top: 12px;
+    }
+    .upload-drop:hover, .upload-drop.drag-over { border-color: rgba(255,150,29,0.55); }
+    .upload-drop input { display: none; }
+    .upload-icon { font-size: 1.8rem; margin-bottom: 4px; }
+    .upload-hint { font-size: 0.8rem; opacity: 0.55; }
+    .file-name { font-size: 0.8rem; opacity: 0.6; margin-top: 8px; min-height: 1em; }
+
+    .caption-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .caption-input {
       flex: 1;
-      min-width: 0;
-      font-size: 0.88rem;
-      line-height: 1.4;
+      padding: 9px 13px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: inherit;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .caption-input::placeholder { opacity: 0.5; }
+
+    /* ── Photo grid ── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 14px;
     }
 
-    .activity-text .who { font-weight: 600; color: var(--fg); }
-    .activity-text .verb { color: rgba(255,246,215,0.6); }
-    .activity-text .what { color: var(--fg); }
-
-    .activity-time {
-      font-size: 0.75rem;
-      color: rgba(255,246,215,0.4);
-      white-space: nowrap;
-      flex-shrink: 0;
-      padding-top: 2px;
+    .photo-tile {
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
     }
 
-    .follow-btn.following {
-      background: var(--accent);
-      color: var(--accent-contrast);
-      border-color: var(--accent);
+    .photo-tile img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
     }
 
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: rgba(11, 18, 32, 0.95);
-      color: var(--fg);
-      border: 1px solid rgba(255,150,29,0.4);
-      padding: 10px 20px;
-      border-radius: 999px;
-      font-size: 0.9rem;
-      transition: transform 0.3s ease;
-      z-index: 999;
-      pointer-events: none;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); }
+    .photo-tile-meta { padding: 7px 9px; }
+    .photo-tile-caption { font-size: 0.78rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .photo-tile-sub { font-size: 0.7rem; opacity: 0.5; margin-top: 1px; }
 
-    @media (max-width: 860px) {
-      .insights-layout {
-        grid-template-columns: 1fr;
-      }
-      .activity-sidebar {
-        position: static;
-        max-height: none;
-        order: -1; /* show activity above news on mobile */
-      }
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      opacity: 0.55;
+      margin-bottom: 4px;
     }
   </style>
 </head>
 
 <body>
-  <main class="insights-container">
+  <main class="insights-page">
     <header class="brand">
       <div class="logo">Pulse</div>
       <p class="subtitle">Weekly Insights</p>
@@ -126,310 +219,206 @@
 
     <div class="insights-layout">
 
-      <!-- LEFT: news feed -->
-      <section class="card">
-        <h2>Artist News &amp; Rumors</h2>
-        <p>Fresh drops, tours, and collabs from the music world.</p>
+      <!-- LEFT: News feed -->
+      <section>
+        <div class="card" style="padding-bottom:20px;">
+          <h2 style="margin:0 0 4px;">Artist News</h2>
+          <p style="font-size:0.88rem;opacity:0.7;margin:0;">Heart a story to follow it.</p>
 
-      <ul class="news-list" id="news-list">
-
-        <!-- 1. Kendrick Lamar -->
-        <li class="news-card"
-            data-id="kendrick-grand-national-tour"
-            data-title="Kendrick Lamar &amp; SZA announce Grand National Tour extension"
-            data-badges="Tour · Confirmed">
-          <div class="news-body">
-            <h3 class="news-title">Kendrick Lamar &amp; SZA — Grand National Tour</h3>
-            <p class="news-summary">After a historic Super Bowl LIX halftime performance, Kendrick and SZA launched
-              the Grand National Tour across North America. New stadium dates have been added through summer 2025
-              following overwhelming demand.</p>
-          </div>
-          <div class="news-meta">
-            <span class="badge">Tour</span>
-            <span class="badge">Confirmed</span>
-            <span class="pill-date">Apr – Jul 2025</span>
-          </div>
-          <div class="news-actions">
-            <a class="btn btn-ghost"
-               href="https://www.ticketmaster.com/kendrick-lamar-tickets/artist/1082792"
-               target="_blank" rel="noopener">View Dates</a>
-            <a class="btn btn-primary"
-               href="https://www.ticketmaster.com/kendrick-lamar-tickets/artist/1082792"
-               target="_blank" rel="noopener">Get Tickets</a>
-            <button class="btn btn-ghost follow-btn" data-id="kendrick-grand-national-tour">Follow</button>
-          </div>
-        </li>
-
-        <!-- 2. Sabrina Carpenter -->
-        <li class="news-card"
-            data-id="sabrina-short-n-sweet-tour"
-            data-title="Sabrina Carpenter — Short n' Sweet Tour"
-            data-badges="Tour · Ongoing">
-          <div class="news-body">
-            <h3 class="news-title">Sabrina Carpenter — Short n' Sweet Tour</h3>
-            <p class="news-summary">Riding the massive success of <em>Short n' Sweet</em>, Sabrina Carpenter's
-              sold-out world tour continues with new dates added in Europe and Asia. Opening night saw surprise
-              guest Chappell Roan join for an unreleased collab.</p>
-          </div>
-          <div class="news-meta">
-            <span class="badge">Tour</span>
-            <span class="badge">Ongoing</span>
-            <span class="pill-date">2025</span>
-          </div>
-          <div class="news-actions">
-            <a class="btn btn-ghost"
-               href="https://www.ticketmaster.com/sabrina-carpenter-tickets/artist/2706134"
-               target="_blank" rel="noopener">View Dates</a>
-            <a class="btn btn-primary"
-               href="https://www.ticketmaster.com/sabrina-carpenter-tickets/artist/2706134"
-               target="_blank" rel="noopener">Get Tickets</a>
-            <button class="btn btn-ghost follow-btn" data-id="sabrina-short-n-sweet-tour">Follow</button>
-          </div>
-        </li>
-
-        <!-- 3. Chappell Roan -->
-        <li class="news-card"
-            data-id="chappell-roan-album-2"
-            data-title="Chappell Roan teases sophomore album with cryptic posts"
-            data-badges="New Album · Rumor">
-          <div class="news-body">
-            <h3 class="news-title">Chappell Roan teases sophomore album with cryptic posts</h3>
-            <p class="news-summary">After sweeping the 2025 Grammys, Chappell Roan has been dropping mysterious
-              visuals and snippets on social media. Producers Frank Ocean and MNEK have been spotted entering
-              her studio — fans are convinced a major era shift is incoming.</p>
-          </div>
-          <div class="news-meta">
-            <span class="badge">New Album</span>
-            <span class="badge">Rumor</span>
-            <span class="pill-date">2025</span>
-          </div>
-          <div class="news-actions">
-            <a class="btn btn-ghost"
-               href="https://open.spotify.com/artist/7GlBOeep6PqTfFi59PTUUN"
-               target="_blank" rel="noopener">Follow on Spotify</a>
-            <a class="btn btn-primary"
-               href="https://open.spotify.com/artist/7GlBOeep6PqTfFi59PTUUN"
-               target="_blank" rel="noopener">Pre-Save</a>
-            <button class="btn btn-ghost follow-btn" data-id="chappell-roan-album-2">Follow</button>
-          </div>
-        </li>
-
-        <!-- 4. The Weeknd -->
-        <li class="news-card"
-            data-id="weeknd-hurry-up-tomorrow-tour"
-            data-title="The Weeknd — Hurry Up Tomorrow World Tour"
-            data-badges="Tour · Confirmed">
-          <div class="news-body">
-            <h3 class="news-title">The Weeknd — Hurry Up Tomorrow World Tour</h3>
-            <p class="news-summary">Abel Tesfaye announced the Hurry Up Tomorrow world tour alongside his
-              film of the same name. The stadium run kicks off in summer 2025, marking what he has
-              described as "the final chapter of The Weeknd" character.</p>
-          </div>
-          <div class="news-meta">
-            <span class="badge">Tour</span>
-            <span class="badge">Confirmed</span>
-            <span class="pill-date">Summer 2025</span>
-          </div>
-          <div class="news-actions">
-            <a class="btn btn-ghost"
-               href="https://www.ticketmaster.com/the-weeknd-tickets/artist/1116352"
-               target="_blank" rel="noopener">View Dates</a>
-            <a class="btn btn-primary"
-               href="https://www.ticketmaster.com/the-weeknd-tickets/artist/1116352"
-               target="_blank" rel="noopener">Get Tickets</a>
-            <button class="btn btn-ghost follow-btn" data-id="weeknd-hurry-up-tomorrow-tour">Follow</button>
-          </div>
-        </li>
-
-        <!-- 5. Bad Bunny -->
-        <li class="news-card"
-            data-id="bad-bunny-debí-tirar-más-fotos"
-            data-title="Bad Bunny — Debí Tirar Más Fotos Tour rumored for late 2025"
-            data-badges="Tour · Rumor">
-          <div class="news-body">
-            <h3 class="news-title">Bad Bunny — Debí Tirar Más Fotos Tour rumored for late 2025</h3>
-            <p class="news-summary">Following the critically acclaimed album <em>Debí Tirar Más Fotos</em>,
-              insiders suggest Benito is planning a major arena and stadium tour for fall/winter 2025.
-              No official dates yet, but presale sign-ups have quietly opened on his site.</p>
-          </div>
-          <div class="news-meta">
-            <span class="badge">Tour</span>
-            <span class="badge">Rumor</span>
-            <span class="pill-date">Late 2025</span>
-          </div>
-          <div class="news-actions">
-            <a class="btn btn-ghost"
-               href="https://www.ticketmaster.com/bad-bunny-tickets/artist/2275155"
-               target="_blank" rel="noopener">View Dates</a>
-            <a class="btn btn-primary"
-               href="https://www.ticketmaster.com/bad-bunny-tickets/artist/2275155"
-               target="_blank" rel="noopener">Get Tickets</a>
-            <button class="btn btn-ghost follow-btn" data-id="bad-bunny-debí-tirar-más-fotos">Follow</button>
-          </div>
-        </li>
-
-        <!-- 6. Taylor Swift -->
-        <li class="news-card"
-            data-id="taylor-swift-new-era-2025"
-            data-title="Taylor Swift hints at new era after Eras Tour conclusion"
-            data-badges="New Album · Teaser">
-          <div class="news-body">
-            <h3 class="news-title">Taylor Swift hints at new era after Eras Tour conclusion</h3>
-            <p class="news-summary">With the record-breaking Eras Tour now wrapped, Taylor Swift has gone
-              quiet on social media — a pattern Swifties know well. Easter eggs spotted in her recent
-              Instagram posts point to a new album announcement possibly arriving before summer 2025.</p>
-          </div>
-          <div class="news-meta">
-            <span class="badge">New Album</span>
-            <span class="badge">Teaser</span>
-            <span class="pill-date">2025</span>
-          </div>
-          <div class="news-actions">
-            <a class="btn btn-ghost"
-               href="https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02"
-               target="_blank" rel="noopener">Follow on Spotify</a>
-            <a class="btn btn-primary"
-               href="https://open.spotify.com/artist/06HL4z0CvFAxyc27GXpf02"
-               target="_blank" rel="noopener">Pre-Save</a>
-            <button class="btn btn-ghost follow-btn" data-id="taylor-swift-new-era-2025">Follow</button>
-          </div>
-        </li>
-
-      </ul>
-
-        <p style="margin-top:16px;">
-          <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
-        </p>
+          <ul class="news-list">
+            {% for insight in insights %}
+            <li class="news-item">
+              <div class="news-inner">
+                <div class="news-top">
+                  <div>
+                    <h3 class="news-title">{{ insight.title }}</h3>
+                    <p class="news-summary">{{ insight.summary }}</p>
+                  </div>
+                  <form method="POST"
+                    action="{{ url_for('toggle_favorite_insight', insight_id=insight.id) }}"
+                    style="margin:0;">
+                    <button type="submit"
+                      class="heart-btn {% if insight.is_favorited %}active{% endif %}"
+                      title="{% if insight.is_favorited %}Unfollow{% else %}Follow{% endif %}">
+                      {% if insight.is_favorited %}♥{% else %}♡{% endif %}
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <div class="news-footer">
+                {% for badge in insight.badges %}
+                  <span class="badge">{{ badge }}</span>
+                {% endfor %}
+                <span class="pill-date">{{ insight.date }}</span>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
       </section>
 
-      <!-- RIGHT: sticky friends activity sidebar -->
-      <aside class="activity-sidebar">
-        <div class="card" id="friends-activity-card">
-          <h2 style="font-size:1.1rem;margin-bottom:12px;">Friends' Activity</h2>
-          <ul id="friends-activity-list" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;"></ul>
-          <p id="friends-activity-empty" class="empty-state" style="display:none;font-size:0.88rem;">
-            No activity yet — add friends in <a href="{{ url_for('matchmaking') }}">Matchmaking</a>.
+      <!-- RIGHT: Sidebar -->
+      <aside class="insights-sidebar">
+
+        <!-- Friends Activity -->
+        <div class="card">
+          <div class="section-label">Friends Activity</div>
+          <h3 style="margin:0 0 2px;font-size:1rem;">What friends are into</h3>
+          <div class="activity-list" id="activityList">
+            <p class="activity-empty">Loading…</p>
+          </div>
+        </div>
+
+        <!-- Events Feed -->
+        <div class="card">
+          <div class="section-label">Events Feed</div>
+          <h3 style="margin:0 0 2px;font-size:1rem;">Share event photos</h3>
+
+          <label class="upload-drop" id="uploadDrop">
+            <input type="file" id="photoInput" accept="image/*">
+            <div class="upload-icon">📷</div>
+            <div style="font-weight:600;font-size:0.88rem;">Choose a photo</div>
+            <div class="upload-hint">JPG · PNG · GIF · WEBP</div>
+          </label>
+          <div class="file-name" id="fileName"></div>
+
+          <div class="caption-row">
+            <input class="caption-input" id="captionInput" type="text" placeholder="Caption (optional)…">
+            <button class="btn btn-primary" id="postBtn">Post</button>
+          </div>
+
+          <div class="photo-grid" id="photoGrid"></div>
+          <p id="photosEmpty" style="font-size:0.85rem;opacity:0.6;margin-top:10px;" hidden>
+            No photos yet — be the first to share!
           </p>
         </div>
-      </aside>
 
-    </div><!-- /.insights-layout -->
+      </aside>
+    </div>
+
+    <p style="margin-top:16px;">
+      <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
+    </p>
   </main>
 
-  <div class="toast" id="toast"></div>
-
   <script>
-    const FOLLOW_URL = "{{ url_for('follow_insight') }}";
-    const UNFOLLOW_URL = "{{ url_for('unfollow_insight') }}";
-    const FOLLOWED_URL = "{{ url_for('get_followed_insights') }}";
-
-    const toast = document.getElementById("toast");
-    function showToast(msg) {
-      toast.textContent = msg;
-      toast.classList.add("show");
-      setTimeout(() => toast.classList.remove("show"), 2200);
+  (function () {
+    function initials(name) {
+      var p = (name || "").trim().split(/\s+/).filter(Boolean);
+      return ((p[0] || "?")[0] + ((p[1] || "")[0] || "")).toUpperCase();
     }
 
-    // Load existing follows and mark buttons
-    async function loadFollows() {
-      try {
-        const res = await fetch(FOLLOWED_URL);
-        const data = await res.json();
-        const ids = new Set((data.items || []).map(i => i.item_id));
-        document.querySelectorAll(".follow-btn").forEach(btn => {
-          if (ids.has(btn.dataset.id)) {
-            btn.classList.add("following");
-            btn.textContent = "Following";
-          }
-        });
-      } catch (e) { /* not logged in or table missing */ }
-    }
+    // ── Friends activity ─────────────────────────────────────
+    var activityList = document.getElementById("activityList");
 
-    // Toggle follow on click
-    document.querySelectorAll(".follow-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const isFollowing = btn.classList.contains("following");
-        const card = btn.closest(".news-card");
-        const itemId = btn.dataset.id;
-        const title = card.dataset.title || card.querySelector(".news-title").textContent;
-        const badges = card.dataset.badges || "";
+    function renderActivity(items) {
+      activityList.innerHTML = "";
+      if (!items || !items.length) {
+        activityList.innerHTML = '<p class="activity-empty">No activity yet — add friends to see what they\'re up to.</p>';
+        return;
+      }
+      items.forEach(function (a) {
+        var el = document.createElement("div");
+        el.className = "activity-item";
 
-        const url = isFollowing ? UNFOLLOW_URL : FOLLOW_URL;
-        const body = isFollowing
-          ? { item_id: itemId }
-          : { item_id: itemId, title, badges };
-
-        try {
-          const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-          });
-          const data = await res.json();
-          if (data.error) throw new Error(data.error);
-
-          if (isFollowing) {
-            btn.classList.remove("following");
-            btn.textContent = "Follow";
-            showToast("Unfollowed");
-          } else {
-            btn.classList.add("following");
-            btn.textContent = "Following";
-            showToast("Added to your profile!");
-          }
-        } catch (e) {
-          showToast("Error — are you logged in?");
+        if (a.type === "posted_photo") {
+          el.innerHTML =
+            '<img class="activity-photo-thumb" src="' + a.photo_url + '" alt="photo">' +
+            '<div class="activity-text">' +
+              '<span class="activity-user">@' + a.username + '</span> posted a photo' +
+              (a.caption ? ': <span class="activity-title">' + a.caption + '</span>' : '') +
+              '<div class="activity-time">' + (a.time || "") + '</div>' +
+            '</div>';
+        } else {
+          el.innerHTML =
+            '<div class="activity-avatar">' + initials(a.username) + '</div>' +
+            '<div class="activity-text">' +
+              '<span class="activity-user">@' + a.username + '</span> liked ' +
+              '<span class="activity-title">' + a.title + '</span>' +
+              '<div class="activity-time">' + (a.time || "") + '</div>' +
+            '</div>';
         }
+        activityList.appendChild(el);
       });
+    }
+
+    fetch("/api/friends-activity")
+      .then(function (r) { return r.json(); })
+      .then(function (d) { renderActivity(d.activity || []); })
+      .catch(function () { activityList.innerHTML = '<p class="activity-empty">Could not load activity.</p>'; });
+
+    // ── Photo feed ───────────────────────────────────────────
+    var photoInput  = document.getElementById("photoInput");
+    var fileName    = document.getElementById("fileName");
+    var captionInput = document.getElementById("captionInput");
+    var postBtn     = document.getElementById("postBtn");
+    var photoGrid   = document.getElementById("photoGrid");
+    var photosEmpty = document.getElementById("photosEmpty");
+
+    photoInput.addEventListener("change", function () {
+      fileName.textContent = photoInput.files[0] ? photoInput.files[0].name : "";
     });
 
-    loadFollows();
-
-    // Load friends' activity
-    (async function () {
-      const list  = document.getElementById("friends-activity-list");
-      const empty = document.getElementById("friends-activity-empty");
-
-      function timeAgo(isoStr) {
-        if (!isoStr) return "";
-        const diff = Math.floor((Date.now() - new Date(isoStr)) / 1000);
-        if (diff < 60)    return "just now";
-        if (diff < 3600)  return Math.floor(diff / 60) + "m ago";
-        if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
-        return Math.floor(diff / 86400) + "d ago";
+    // drag-and-drop visual
+    var uploadDrop = document.getElementById("uploadDrop");
+    uploadDrop.addEventListener("dragover",  function (e) { e.preventDefault(); uploadDrop.classList.add("drag-over"); });
+    uploadDrop.addEventListener("dragleave", function ()  { uploadDrop.classList.remove("drag-over"); });
+    uploadDrop.addEventListener("drop", function (e) {
+      e.preventDefault();
+      uploadDrop.classList.remove("drag-over");
+      if (e.dataTransfer.files.length) {
+        photoInput.files = e.dataTransfer.files;
+        fileName.textContent = photoInput.files[0].name;
       }
+    });
 
+    function renderPhotos(photos) {
+      photoGrid.innerHTML = "";
+      if (!photos || !photos.length) { photosEmpty.hidden = false; return; }
+      photosEmpty.hidden = true;
+      photos.forEach(function (p) {
+        var tile = document.createElement("div");
+        tile.className = "photo-tile";
+        tile.innerHTML =
+          '<img src="' + p.url + '" alt="' + (p.caption || "event photo") + '" loading="lazy">' +
+          '<div class="photo-tile-meta">' +
+            '<div class="photo-tile-caption">' + (p.caption || "No caption") + '</div>' +
+            '<div class="photo-tile-sub">@' + p.username + ' · ' + p.time + '</div>' +
+          '</div>';
+        photoGrid.appendChild(tile);
+      });
+    }
+
+    fetch("/api/event-photos")
+      .then(function (r) { return r.json(); })
+      .then(function (d) { renderPhotos(d.photos || []); })
+      .catch(function () { photosEmpty.hidden = false; });
+
+    postBtn.addEventListener("click", async function () {
+      var file = photoInput.files[0];
+      if (!file) { alert("Choose a photo first."); return; }
+      var form = new FormData();
+      form.append("photo", file);
+      form.append("caption", captionInput.value.trim());
+      postBtn.textContent = "Posting…";
+      postBtn.disabled = true;
       try {
-        const res  = await fetch("{{ url_for('friends_activity') }}");
-        const data = await res.json();
-        const items = data.activity || [];
-
-        if (!items.length) {
-          empty.style.display = "block";
-          if (data.debug) empty.textContent = "No activity yet — " + data.debug;
-          return;
+        var res  = await fetch("/api/event-photos", { method: "POST", body: form });
+        var data = await res.json();
+        if (data.url) {
+          photoInput.value = "";
+          captionInput.value = "";
+          fileName.textContent = "";
+          var r2 = await fetch("/api/event-photos");
+          var d2 = await r2.json();
+          renderPhotos(d2.photos || []);
+        } else {
+          alert(data.error || "Upload failed.");
         }
-
-        items.forEach(item => {
-          const li = document.createElement("li");
-          li.className = "activity-item";
-          const initials = (item.username || "?")[0].toUpperCase();
-          li.innerHTML = `
-            <div class="activity-avatar">${initials}</div>
-            <div class="activity-text">
-              <span class="who">@${item.username}</span>
-              <span class="verb"> followed </span>
-              <span class="what">${item.title}</span>
-            </div>
-            <span class="activity-time">${timeAgo(item.created_at)}</span>`;
-          list.appendChild(li);
-        });
-      } catch (e) {
-        empty.style.display = "block";
-        empty.textContent = "Could not load activity.";
-      }
-    })();
+      } catch (_) { alert("Upload failed."); }
+      finally { postBtn.textContent = "Post"; postBtn.disabled = false; }
+    });
+  })();
   </script>
 </body>
-
 </html>
