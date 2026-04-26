@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import os
 import re
 import requests
+import json
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -45,6 +47,48 @@ def create_app() -> Flask:
         if images:
             latest = max(images, key=lambda f: os.path.getmtime(os.path.join(uploads_path, f)))
             return url_for("static", filename="images/profile_placeholder.png")
+    
+    def get_full_name(u: dict) -> str:
+        first = u.get("first_name", "")
+        last = u.get("last_name", "")
+        full = f"{first} {last}".strip()
+        return full if full else u.get("username", "Unknown")
+
+    def get_initials(name: str) -> str:
+        parts = name.strip().split()
+        return "".join(p[0].upper() for p in parts[:2]) if parts else "?"
+
+    def get_current_user_id() -> str:
+        return str(session.get("user_id", ""))
+
+    def get_friend_requests_for_user(user_id: int) -> list:
+        try:
+            rows = supabase.table("friendships") \
+                .select("user_id") \
+                .eq("friend_id", str(user_id)) \
+                .eq("status", "pending") \
+                .execute()
+            return rows.data or []
+        except Exception:
+            return []
+
+    def get_friends_for_user(user_id: int) -> list:
+        try:
+            f1 = supabase.table("friendships").select("friend_id") \
+                .eq("user_id", str(user_id)).eq("status", "accepted").execute()
+            f2 = supabase.table("friendships").select("user_id") \
+                .eq("friend_id", str(user_id)).eq("status", "accepted").execute()
+            ids = list({r["friend_id"] for r in (f1.data or [])} |
+                    {r["user_id"] for r in (f2.data or [])})
+            return ids
+        except Exception:
+            return []
+
+    def get_ai_artist_recommendations(seed_artist: str, seed_genre: str) -> list:
+        # Placeholder — replace with real AI/Spotify logic later
+        return [
+            {"name": f"Artist similar to {seed_artist}", "genre": seed_genre}
+        ]
 
 
     # ============================================================
@@ -713,6 +757,47 @@ def create_app() -> Flask:
             artists.append({"id": a["id"], "name": a["name"], "image": image})
 
         return jsonify(artists)
+    
+    # ============================================================
+    # IN-APP MESSAGING API
+    # ============================================================
+
+    @app.route("/api/send_message", methods=["POST"])
+    def send_message():
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+
+        data = request.json
+        recipient_id = data.get("recipient_id")
+        body = data.get("body")
+
+        if not recipient_id or not body:
+            return jsonify({"error": "Missing data"}), 400
+
+        result = supabase.table("messages").insert({
+            "sender_id": int(session["user_id"]),
+            "recipient_id": int(recipient_id),
+            "body": body
+        }).execute()
+
+        return jsonify(result.data)
+
+
+    @app.route("/api/get_messages/<recipient_id>")
+    def get_messages(recipient_id):
+        if "user_id" not in session:
+            return jsonify({"error": "Not logged in"}), 401
+
+        user_id = session["user_id"]
+        recipient_id = int(recipient_id)
+
+        result = supabase.table("messages") \
+            .select("*") \
+            .or_(f"and(sender_id.eq.{user_id},recipient_id.eq.{recipient_id}),and(sender_id.eq.{recipient_id},recipient_id.eq.{user_id})") \
+            .order("created_at") \
+            .execute()
+
+        return jsonify(result.data)
 
     return app
 
