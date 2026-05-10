@@ -5,144 +5,385 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pulse - Matchmaking</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    /* ===== Page chrome ===== */
+    body {
+      font-family: 'Poppins', system-ui, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(160deg, #ff7f1f 0%, #f06b1a 60%, #e26015 100%);
+      color: #fff;
+    }
+    .mm-container {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 56px 24px 80px;
+    }
+    .mm-topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .mm-brand .logo {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .mm-brand .subtitle {
+      margin: 6px 0 0;
+      font-size: 15px;
+      opacity: 0.92;
+    }
+    .mm-pill {
+      display: inline-block;
+      border: 1px solid rgba(255,255,255,0.55);
+      color: #fff;
+      background: transparent;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-size: 15px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .mm-pill:hover { background: rgba(255,255,255,0.12); }
+
+    /* ===== Suggested Accounts panel ===== */
+    .mm-panel {
+      background: #1f2738;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+    }
+    .mm-panel h2 {
+      margin: 0 0 18px;
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    /* ===== Genre filter row ===== */
+    .mm-filter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .mm-filter label {
+      font-size: 14px;
+      opacity: 0.85;
+    }
+    .mm-filter select {
+      background: #2a3346;
+      color: #fff;
+      border: 1px solid #3a4560;
+      border-radius: 999px;
+      padding: 9px 16px;
+      font-family: inherit;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+      min-width: 180px;
+    }
+    .mm-filter select:focus { border-color: #ff7f1f; }
+    .mm-count {
+      margin-left: auto;
+      font-size: 13px;
+      opacity: 0.7;
+    }
+
+    /* ===== Result cards ===== */
+    .mm-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .mm-card {
+      background: #1a2030;
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .mm-card-tag {
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      opacity: 0.85;
+    }
+    .mm-card-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .mm-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #2a3346;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .mm-who {
+      flex: 1;
+      min-width: 0;
+    }
+    .mm-name {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .mm-handle {
+      margin: 2px 0 0;
+      font-size: 13px;
+      opacity: 0.65;
+    }
+    .mm-genre-chips {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .mm-chip {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #2a3346;
+      opacity: 0.85;
+    }
+    .mm-connect {
+      background: #fff5da;
+      color: #1a2030;
+      border: none;
+      padding: 9px 22px;
+      border-radius: 999px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 120ms ease;
+      flex-shrink: 0;
+    }
+    .mm-connect:hover { background: #ffeeb8; }
+    .mm-connect.is-connected {
+      background: #1DB954;
+      color: #fff;
+      cursor: default;
+    }
+    .mm-empty {
+      text-align: center;
+      padding: 32px 20px;
+      opacity: 0.7;
+      font-size: 14px;
+    }
+  </style>
 </head>
 
 <body>
-  <main class="container">
-    <header class="brand">
-      <div class="logo">Pulse</div>
-      <p class="subtitle">Matchmaking</p>
-    </header>
-    <section class="card">
-      <h2>Suggested Accounts</h2>
-      <section class="matchmaker-feed">
-        <article class="user-card">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-          <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-          <div class="user-main">
-            <div class="user-avatar">P1</div>
-            <div class="user-meta">
-              <div class="user-name">Lena Ortiz</div>
-              <div class="user-handle">@lenaverse</div>
-            </div>
-            <div class="user-actions">
-              <a class="btn btn-ghost">Friend</a>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Lena Ortiz') }}">View</a>
-            </div>
-          </div>
-        </article>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <article class="user-card">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-          <div class="user-main">
-            <div class="user-avatar">P2</div>
-            <div class="user-meta">
-              <div class="user-name">Caleb Tran</div>
-              <div class="user-handle">@c0debycaleb</div>
-            </div>
-            <div class="user-actions">
-              <a class="btn btn-ghost">Friend</a>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Caleb Tran') }}">View</a>
-            </div>
-          </div>
-        </article>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <article class="user-card">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-          <div class="user-main">
-            <div class="user-avatar">P3</div>
-            <div class="user-meta">
-              <div class="user-name">Maya Chen</div>
-              <div class="user-handle">@itsmayac</div>
-            </div>
-            <div class="user-actions">
-              <a class="btn btn-ghost">Friend</a>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Maya Chen') }}">View</a>
-            </div>
-          </div>
-        </article>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <article class="user-card">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-          <div class="user-main">
-            <div class="user-avatar">P4</div>
-            <div class="user-meta">
-              <div class="user-name">Dante Rivera</div>
-              <div class="user-handle">@dantethebuilder</div>
-            </div>
-            <div class="user-actions">
-              <a class="btn btn-ghost">Friend</a>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Dante Rivera') }}">View</a>
-            </div>
-          </div>
-        </article>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <article class="user-card">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-          <div class="user-main">
-            <div class="user-avatar">P5</div>
-            <div class="user-meta">
-              <div class="user-name">Eli Navarro</div>
-              <div class="user-handle">@elinavdev</div>
-            </div>
-            <div class="user-actions">
-              <a class="btn btn-ghost">Friend</a>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Eli Navarro') }}">View</a>
-            </div>
-          </div>
-        </article>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <article class="user-card">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-          <div class="user-main">
-            <div class="user-avatar">P6</div>
-            <div class="user-meta">
-              <div class="user-name">Zoey Kim</div>
-              <div class="user-handle">@zoeyk.dev</div>
-            </div>
-            <div class="user-actions">
-              <a class="btn btn-ghost">Friend</a>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Zoey Kim') }}">View</a>
-            </div>
-          </div>
-        </article>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
-        <article class="user-card">
-          <div class="user-header">
-            <div class="user-title">Suggested for you</div>
-          </div>
-          <div class="user-main">
-            <div class="user-avatar">P7</div>
-            <div class="user-meta">
-              <div class="user-name">Nora Patel</div>
-              <div class="user-handle">@norapixel</div>
-            </div>
-            <div class="user-actions">
-              <a class="btn btn-ghost">Friend</a>
-              <a class="btn btn-primary" href="{{ url_for('user_profile', username='Nora Patel') }}">View</a>
-            </div>
-          </div>
-        </article>
-      </section>
+  <main class="mm-container">
 
-      <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+    <header class="mm-topbar">
+      <div class="mm-brand">
+        <div class="logo">Pulse</div>
+        <p class="subtitle">Matchmaking</p>
+      </div>
+      <a class="mm-pill" href="{{ url_for('home') }}">Home</a>
+    </header>
+
+    <section class="mm-panel">
+      <h2>Suggested Accounts</h2>
+
+      <div class="mm-filter">
+        <label for="genre-filter">Filter by genre:</label>
+        <select id="genre-filter">
+          <option value="">All genres</option>
+          <option value="Pop">Pop</option>
+          <option value="Indie">Indie</option>
+          <option value="Hip-Hop">Hip-Hop</option>
+          <option value="Rap">Rap</option>
+          <option value="K-Pop">K-Pop</option>
+          <option value="Rock">Rock</option>
+          <option value="Metal">Metal</option>
+          <option value="Latin">Latin</option>
+        </select>
+        <span class="mm-count" id="result-count"></span>
+      </div>
+
+      <div class="mm-list" id="results"></div>
     </section>
+
   </main>
+
+  <script>
+    // ===== Demo data =====
+    // Genres are based on the seeded artists in app.py (demo_artists).
+    // When you wire up real users, replace this array with a fetch() to a
+    // backend route that returns the same shape.
+    const SUGGESTED = [
+      {
+        tag: "P1",
+        name: "Lena Ortiz",
+        handle: "lenaverse",
+        genres: ["Pop", "Indie"],
+      },
+      {
+        tag: "P2",
+        name: "Caleb Tran",
+        handle: "c0debycaleb",
+        genres: ["Hip-Hop", "Rap"],
+      },
+      {
+        tag: "P3",
+        name: "Maya Chen",
+        handle: "itsmayac",
+        genres: ["K-Pop", "Pop"],
+      },
+      {
+        tag: "P4",
+        name: "Dante Rivera",
+        handle: "dantethebuilder",
+        genres: ["Rock", "Metal"],
+      },
+      {
+        tag: "P5",
+        name: "Eli Navarro",
+        handle: "elinavdev",
+        genres: ["Indie", "Rock"],
+      },
+      {
+        tag: "P6",
+        name: "Zoey Kim",
+        handle: "zoeyk.dev",
+        genres: ["Latin", "Pop"],
+      },
+      {
+        tag: "P7",
+        name: "Nora Pixel",
+        handle: "norapixel",
+        genres: ["Pop"],
+      },
+    ];
+
+    const resultsEl = document.getElementById("results");
+    const filterEl  = document.getElementById("genre-filter");
+    const countEl   = document.getElementById("result-count");
+
+    // Track who's been "connected" this session so the button reflects it.
+    const connected = new Set();
+
+    function render() {
+      const genre = filterEl.value;
+      const visible = genre
+        ? SUGGESTED.filter(u => u.genres.includes(genre))
+        : SUGGESTED;
+
+      countEl.textContent = `${visible.length} ${visible.length === 1 ? "match" : "matches"}`;
+      resultsEl.innerHTML = "";
+
+      if (visible.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "mm-empty";
+        empty.textContent = `No suggested accounts for "${genre}". Try another genre.`;
+        resultsEl.appendChild(empty);
+        return;
+      }
+
+      for (const u of visible) {
+        resultsEl.appendChild(renderCard(u));
+      }
+    }
+
+    function renderCard(u) {
+      const card = document.createElement("div");
+      card.className = "mm-card";
+
+      const tagLine = document.createElement("p");
+      tagLine.className = "mm-card-tag";
+      tagLine.textContent = "Suggested for you";
+      card.appendChild(tagLine);
+
+      const row = document.createElement("div");
+      row.className = "mm-card-row";
+
+      const avatar = document.createElement("div");
+      avatar.className = "mm-avatar";
+      avatar.textContent = u.tag;
+      row.appendChild(avatar);
+
+      const who = document.createElement("div");
+      who.className = "mm-who";
+
+      const name = document.createElement("p");
+      name.className = "mm-name";
+      name.textContent = u.name;
+      who.appendChild(name);
+
+      const handle = document.createElement("p");
+      handle.className = "mm-handle";
+      handle.textContent = "@" + u.handle;
+      who.appendChild(handle);
+
+      const chips = document.createElement("div");
+      chips.className = "mm-genre-chips";
+      for (const g of u.genres) {
+        const chip = document.createElement("span");
+        chip.className = "mm-chip";
+        chip.textContent = g;
+        chips.appendChild(chip);
+      }
+      who.appendChild(chips);
+
+      row.appendChild(who);
+
+      const btn = document.createElement("button");
+      btn.className = "mm-connect";
+      btn.type = "button";
+      const isConnected = connected.has(u.handle);
+      btn.textContent = isConnected ? "Connected ✓" : "Connect";
+      if (isConnected) btn.classList.add("is-connected");
+      btn.disabled = isConnected;
+      btn.onclick = () => onConnect(u, btn);
+      row.appendChild(btn);
+
+      card.appendChild(row);
+      return card;
+    }
+
+    async function onConnect(u, btn) {
+      btn.disabled = true;
+      const original = btn.textContent;
+      btn.textContent = "Connecting…";
+      try {
+        // Best-effort: tell the backend. Demo users won't have real IDs in
+        // the users table yet, so the server may return an error — we still
+        // mark the UI as connected so the user sees feedback.
+        await fetch("/connections/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            match_user_id: u.handle,
+            similarity_score: 0,
+          }),
+        }).catch(() => {});
+      } finally {
+        connected.add(u.handle);
+        btn.textContent = "Connected ✓";
+        btn.classList.add("is-connected");
+        btn.disabled = true;
+      }
+    }
+
+    filterEl.addEventListener("change", render);
+    render();
+  </script>
 </body>
 
 </html>

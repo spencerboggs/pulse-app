@@ -5,62 +5,159 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pulse - Events</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 
 <body>
+
   <main class="container">
     <header class="brand">
-      <div class="logo">pulse</div>
+      <div class="logo">Pulse</div>
       <p class="subtitle">Events</p>
     </header>
+
     <section class="card">
-      <h2>Explore Events and Concerts</h2>
-      <!-- Concert Map Button -->
+      <h2>Explore Events And Concerts</h2>
+
       <a class="btn btn-primary w-full" href="{{ url_for('concert_map') }}">Concert Map</a>
-      <div class="list" style="margin-top: 8px;">
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+
+      <div class="list" style="margin-top: 12px;">
+
+        <!-- EVENT 1 -->
         <div class="event-card">
-          <img src="{{ url_for('static', filename='images/placeholder_caser.png') }}" alt="Event 1" class="event-pic">
+          <img src="{{ url_for('static', filename='images/placeholder_caser.png') }}" class="event-pic">
           <h3>Daniel Ceasar Concert</h3>
+
           <div class="event-date-location">
             <p>Date: 11/23/2025</p>
             <p>Location: So-Fi Stadium</p>
           </div>
-          <p class="event-description">Come experience Daniel Ceasar's newest album LIVE at SoFi Stadium</p>
+
+          <p class="event-description">
+            Come experience Daniel Ceasar's newest album LIVE at SoFi Stadium
+          </p>
+
           <button class="btn btn-primary w-full"
             onclick="openModal('Daniel Ceasar Concert', 'So-Fi Stadium', '11/23/2025')">
             View Details
           </button>
         </div>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+
+        <!-- EVENT 2 -->
         <div class="event-card">
-          <img src="{{ url_for('static', filename='images/placeholder_flawed.jpg') }}" alt="Event 2" class="event-pic">
+          <img src="{{ url_for('static', filename='images/placeholder_flawed.jpg') }}" class="event-pic">
           <h3>Flawed Mangoes Debut Show</h3>
+
           <div class="event-date-location">
             <p>Date: 9/28/2025</p>
             <p>Location: EchoPlex</p>
           </div>
-          <p class="event-description">Up and comer artist Flawed Mangoes has his first live show at Echo Plex</p>
-          <a class="btn btn-primary w-full">View Details</a>
+
+          <p class="event-description">
+            Up and coming artist Flawed Mangoes has his first live show at EchoPlex
+          </p>
+
+          <button class="btn btn-primary w-full"
+            onclick="openModal('Flawed Mangoes Debut Show', 'EchoPlex', '9/28/2025')">
+            View Details
+          </button>
         </div>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+
+        <!-- EVENT 3 -->
         <div class="event-card">
-          <img src="{{ url_for('static', filename='images/placeholder_benson.jpg') }}" alt="Event 3" class="event-pic">
+          <img src="{{ url_for('static', filename='images/placeholder_benson.jpg') }}" class="event-pic">
           <h3>Benson Boone World Tour</h3>
+
           <div class="event-date-location">
             <p>Date: 12/25/2025</p>
             <p>Location: Youtube Stadium</p>
           </div>
-          <p class="event-description">Benson Boone makes his long awaited return to LA for his world tour. </p>
-          <a class="btn btn-primary w-full">View Details</a>
+
+          <p class="event-description">
+            Benson Boone returns to LA for his world tour.
+          </p>
+
+          <button class="btn btn-primary w-full"
+            onclick="openModal('Benson Boone World Tour', 'Youtube Stadium', '12/25/2025')">
+            View Details
+          </button>
         </div>
-        <!-- ================================================================== -->
+
       </div>
-      <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+
+      <p style="margin-top: 16px;">
+        <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
+      </p>
+
     </section>
   </main>
-</body>
 
+  <!-- ===== MODAL ===== -->
+  <div id="eventModal" style="
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.7);
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+  ">
+
+    <div style="
+      background:#0d2247;
+      color:white;
+      padding:24px;
+      border-radius:16px;
+      width:360px;
+      text-align:center;
+      box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    ">
+
+      <h2 id="modalTitle" style="color:#f5e6c5;"></h2>
+      <p id="modalLocation"></p>
+      <p id="modalDate"></p>
+
+      <h3 style="margin-top:15px; color:#f5e6c5;">Invite Friends</h3>
+
+      <div style="text-align:left; margin-bottom:12px;">
+        <label><input type="checkbox"> Lena Ortiz</label><br>
+        <label><input type="checkbox"> Caleb Tran</label><br>
+        <label><input type="checkbox"> Maya Chen</label><br>
+        <label><input type="checkbox"> Dante Rivera</label><br>
+      </div>
+
+      <button onclick="inviteFriends()" class="btn btn-ghost w-full">
+        Send Invite
+      </button>
+
+      <button onclick="closeModal()" class="btn btn-primary w-full" style="margin-top:10px;">
+        Close
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ===== JAVASCRIPT ===== -->
+  <script>
+    function openModal(name, location, date) {
+      document.getElementById("modalTitle").innerText = name;
+      document.getElementById("modalLocation").innerText = "Location: " + location;
+      document.getElementById("modalDate").innerText = "Date: " + date;
+
+      document.getElementById("eventModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("eventModal").style.display = "none";
+    }
+
+    function inviteFriends() {
+      alert("Invites sent!");
+    }
+  </script>
+
+</body>
 </html>
