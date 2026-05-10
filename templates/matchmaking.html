@@ -70,7 +70,7 @@
   </style>
 </head>
 
-<body>
+<body data-user-id="{{ session.get('user_id', '') }}">
   <main class="matchmaking-page">
     <header class="brand">
       <div class="logo">Pulse</div>
@@ -120,6 +120,8 @@
     </section>
   </main>
 
+  <script src="{{ url_for('static', filename='js/similarity-cache.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/similarity.js') }}"></script>
   <script>
   (function () {
     // ── Helpers ──────────────────────────────────────────────
@@ -203,6 +205,8 @@
       const el = document.createElement("article");
       el.className = "user-card suggested-card";
       el.dataset.userid = id;
+      const pct = typeof u.similarity === "number" ? Math.round(u.similarity * 100) : null;
+      const matchLine = pct != null ? `<div class="user-handle">${pct}% taste match</div>` : "";
       el.innerHTML = `
         <div class="user-header"><div class="user-title">Suggested for you</div></div>
         <div class="user-main">
@@ -210,6 +214,7 @@
           <div class="user-meta">
             <div class="user-name">${name}</div>
             <div class="user-handle">${handle}</div>
+            ${matchLine}
           </div>
           <div class="user-actions">
             <button class="btn btn-ghost add-btn" data-action="add-friend" ${btnDisabled}>${btnLabel}</button>
@@ -220,17 +225,35 @@
     }
 
     async function loadSuggested() {
+      const uid = document.body.getAttribute("data-user-id") || "";
+      let showedCache = false;
+      const cached = window.PulseSimilarityCache && uid ? PulseSimilarityCache.read(uid) : null;
+      if (cached && cached.length) {
+        if (suggestedLoading && suggestedLoading.parentNode) suggestedLoading.remove();
+        cached.forEach(renderSuggested);
+        showedCache = true;
+      }
       try {
-        const res = await fetch("/api/suggested-users");
+        const res = await fetch("/api/similarity/top-matches", { credentials: "same-origin" });
         const data = await res.json();
-        suggestedLoading.remove();
+        if (suggestedLoading && suggestedLoading.parentNode) suggestedLoading.remove();
+        if (window.PulseSimilarityCache && uid && data.users && data.users.length) {
+          PulseSimilarityCache.write(uid, data.users);
+        }
+        suggestedList.querySelectorAll(".suggested-card").forEach(function (n) { n.remove(); });
         if (!data.users || !data.users.length) {
-          suggestedList.insertAdjacentHTML("beforeend", '<p class="empty-state">No suggestions right now.</p>');
+          if (!showedCache) {
+            suggestedList.insertAdjacentHTML("beforeend", '<p class="empty-state">No suggestions right now.</p>');
+          }
           return;
         }
         data.users.forEach(renderSuggested);
       } catch (_) {
-        suggestedLoading.textContent = "Could not load suggestions.";
+        if (suggestedLoading && suggestedLoading.parentNode) {
+          suggestedLoading.textContent = "Could not load suggestions.";
+        } else if (!showedCache) {
+          suggestedList.insertAdjacentHTML("beforeend", '<p class="empty-state">Could not load suggestions.</p>');
+        }
       }
     }
     loadSuggested();
