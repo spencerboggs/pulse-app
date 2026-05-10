@@ -9,24 +9,33 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 
-<body>
+<body class="page-home">
+  <!-- Home is the primary navigation hub after sign in with balanced spacing for desktop widths. -->
   <main class="container">
     <header class="brand">
       <div class="logo">Pulse</div>
-      <p class="subtitle">Meet People Through Music</p>
+      <p class="subtitle">Hello, {{ username }}</p>
     </header>
     <section class="card">
-      <h2>welcome</h2>
-      <div class="grid-2" style="margin-top: 12px;">
-        <a class="btn btn-primary w-full" href="{{ url_for('profile') }}">profile</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('events') }}">events</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('settings') }}">settings</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('weekly_insights') }}">weekly insights</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('matchmaking') }}">matchmaking</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('message') }}">message</a>
-        <a class="btn btn-primary w-full" href="{{ url_for('concert_map') }}">concert map</a>
+      <h2>Home</h2>
+      <p class="home-lede">Jump into discovery, social features, and your account tools. Layout favors wide screens first.</p>
+      <!-- Primary destinations use a three column grid on desktop for quick scanning. -->
+      <nav class="home-nav-grid" aria-label="Main navigation">
+        <a class="btn btn-primary w-full" href="{{ url_for('onboarding_quiz') }}">Onboarding quiz</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('profile') }}">Profile</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('matchmaking') }}">Matchmaking</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('events') }}">Events</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('concert_map') }}">Concert map</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('message') }}">Messages</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('weekly_insights') }}">Weekly insights</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('chatbot') }}">Pulse assistant</a>
+        <a class="btn btn-primary w-full" href="{{ url_for('settings') }}">Settings</a>
+      </nav>
+      <!-- Account level actions sit below the grid so they read as secondary to feature entry points. -->
+      <div class="home-footer-actions">
+        <a class="btn btn-ghost" href="{{ url_for('auth') }}">Switch account</a>
+        <a class="btn btn-ghost" href="{{ url_for('logout') }}">Log out</a>
       </div>
-      <p style="margin-top: 16px;"><a class="btn btn-ghost" href="{{ url_for('auth') }}">back to auth</a></p>
     </section>
   </main>
 </body>

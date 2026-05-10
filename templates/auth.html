@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 
+<!-- Auth hosts login and signup forms that POST to Flask routes backed by Supabase. -->
 <body>
   <main class="container">
     <header class="brand">
@@ -16,11 +17,13 @@
       <p class="subtitle">Welcome back. Choose an option to continue.</p>
     </header>
 
+    <!-- Toggle switches which card is visible without leaving the page. -->
     <div class="toggle">
       <button id="btn-login" class="btn btn-primary">Log in</button>
       <button id="btn-signup" class="btn btn-ghost">Sign up</button>
     </div>
 
+    <!-- Login posts identity and password fields to the session backed login route. -->
     <section id="login-form" class="card" hidden>
       <h2>Log in</h2>
       <form id="form-login" method="POST" action="/login">
@@ -36,6 +39,7 @@
       </form>
     </section>
 
+    <!-- Signup collects names, email, username, and password pair for the users table insert. -->
     <section id="signup-form" class="card" hidden>
       <h2>Sign up</h2>
       <form id="form-signup" method="POST" action="/signup">
