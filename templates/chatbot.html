@@ -1,0 +1,51 @@
+﻿<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse - Chatbot</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<!-- Assistant UI reads curated event metadata from the JSON block so buttons stay aligned with the events page. -->
+<body class="page-chatbot">
+  <!-- Server renders this array so match terms stay identical to the catalog used on the events screen. -->
+  <script type="application/json" id="pulse-event-nav">{{ pulse_event_nav | tojson }}</script>
+  <main class="container">
+    <header class="brand">
+      <div class="logo">Pulse</div>
+      <p class="subtitle">Pulse assistant</p>
+    </header>
+
+    <section class="card">
+      <h2>Chat with Pulse</h2>
+      <p class="chat-intro">Ask about matchmaking, settings, concerts, or name an artist or show. Matching listings appear as buttons below the reply.</p>
+
+      <!-- Scrollable transcript and fixed composer share the card height on desktop layouts. -->
+      <div class="chat-container" id="chatContainer">
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-message bot-message">
+            <div class="message-avatar">P</div>
+            <div class="message-content">
+              <div class="message-bubble">Hi. I am your Pulse assistant. Try naming an artist, genre, or show on the lineup. I will suggest links when something matches.</div>
+              <div class="message-time">Just now</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-container">
+          <input type="text" id="chatInput" class="chat-input" placeholder="Type your message..." autocomplete="off" />
+          <button id="sendButton" class="btn btn-primary">Send</button>
+        </div>
+      </div>
+
+      <p class="chat-back-row"><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+</body>
+
+</html>
