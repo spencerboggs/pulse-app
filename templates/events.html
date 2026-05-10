@@ -183,6 +183,7 @@
   </style>
 </head>
 
+<!-- Events lists curated cards and opens detail content from the API or from assistant deep links. -->
 <body>
   <main class="events-page">
     <header class="brand">
@@ -275,6 +276,12 @@
         document.getElementById("modal-desc").textContent  = err.message;
       }
     }
+
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const openId = params.get("open");
+      if (openId) openModal(openId);
+    })();
   </script>
 </body>
 </html>
