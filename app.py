@@ -531,14 +531,20 @@ def create_app() -> Flask:
         username = session.get("username", "Guest")
         slug = slugify(username)
         img_url = pick_user_image_by_slug(slug)
-        favorite_ids = session.get("favorite_insights", [])
-        followed_insights = [item for item in WEEKLY_INSIGHTS if item["id"] in favorite_ids]
+        favorite_insight_ids = session.get("favorite_insights", [])
+        followed_insights = [item for item in WEEKLY_INSIGHTS if item["id"] in favorite_insight_ids]
+        favorite_event_ids = session.get("favorite_events", [])
+        followed_events = [
+            {"id": eid, **EVENTS[eid]}
+            for eid in favorite_event_ids
+            if eid in EVENTS
+        ]
         return render_template(
             "profile.html",
             img_url=img_url,
             display_name=username,
-            followed_insights=followed_insights
-
+            followed_insights=followed_insights,
+            followed_events=followed_events,
         )
     ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
 
@@ -1082,7 +1088,149 @@ def create_app() -> Flask:
 
     @app.route("/weekly-insights")
     def weekly_insights():
-        return render_template("weekly_insights.html")
+        favorites = session.get("favorite_insights", [])
+        insights = []
+        for item in WEEKLY_INSIGHTS:
+            insight = dict(item)
+            insight["is_favorited"] = item["id"] in favorites
+            insights.append(insight)
+        return render_template("weekly_insights.html", insights=insights)
+
+    @app.post("/api/insights/favorite/<insight_id>")
+    def api_toggle_favorite_insight(insight_id):
+        favorites = session.get("favorite_insights", [])
+        if insight_id in favorites:
+            favorites.remove(insight_id)
+            favorited = False
+        else:
+            favorites.append(insight_id)
+            favorited = True
+            insight = next((i for i in WEEKLY_INSIGHTS if i["id"] == insight_id), None)
+            if insight:
+                _append_activity({
+                    "user_id": str(session.get("user_id", "guest")),
+                    "username": session.get("username", "someone"),
+                    "type": "liked_insight",
+                    "title": insight["title"],
+                    "time": "Just now",
+                })
+        session["favorite_insights"] = favorites
+        return jsonify({"favorited": favorited})
+
+    @app.get("/api/events-feed")
+    def api_events_feed():
+        favorites = session.get("favorite_events", [])
+        out = []
+        for event_id, e in EVENTS.items():
+            out.append({
+                "id": event_id,
+                "title": e["title"],
+                "genre": e["genre"],
+                "date": e["date"],
+                "location": e["location"],
+                "description": e["description"],
+                "is_favorited": event_id in favorites,
+            })
+        return jsonify({"events": out})
+
+    @app.post("/api/events-feed/favorite/<event_id>")
+    def api_toggle_favorite_event(event_id):
+        if event_id not in EVENTS:
+            return jsonify({"error": "Event not found"}), 404
+        favorites = session.get("favorite_events", [])
+        if event_id in favorites:
+            favorites.remove(event_id)
+            favorited = False
+        else:
+            favorites.append(event_id)
+            favorited = True
+            _append_activity({
+                "user_id": str(session.get("user_id", "guest")),
+                "username": session.get("username", "someone"),
+                "type": "liked_event",
+                "title": EVENTS[event_id]["title"],
+                "time": "Just now",
+            })
+        session["favorite_events"] = favorites
+        return jsonify({"favorited": favorited})
+
+    @app.get("/api/friends-activity")
+    def api_friends_activity():
+        current_uid = str(session.get("user_id", ""))
+        try:
+            uid_int = int(current_uid)
+            friend_ids = {str(fid) for fid in get_friends_for_user(uid_int)}
+        except (TypeError, ValueError):
+            friend_ids = set()
+        log = _load_activity()
+        activity = [e for e in log if str(e.get("user_id")) in friend_ids]
+        return jsonify({"activity": activity[:20]})
+
+    ALLOWED_PHOTO_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+    @app.get("/api/event-photos")
+    def get_event_photos():
+        photos_dir = os.path.join(app.static_folder, "uploads", "event-photos")
+        os.makedirs(photos_dir, exist_ok=True)
+        meta_path = os.path.join(photos_dir, "metadata.json")
+        all_photos = json.loads(open(meta_path).read()) if os.path.exists(meta_path) else []
+        current_uid = str(session.get("user_id", ""))
+        try:
+            uid_int = int(current_uid)
+            friend_ids = {str(fid) for fid in get_friends_for_user(uid_int)}
+        except (TypeError, ValueError):
+            friend_ids = set()
+        allowed = friend_ids | {current_uid}
+        if current_uid and allowed:
+            photos = [p for p in all_photos if str(p.get("user_id", "")) in allowed]
+        else:
+            photos = all_photos
+        return jsonify({"photos": photos})
+
+    @app.post("/api/event-photos")
+    def upload_event_photo():
+        import time as _time, uuid as _uuid
+        caption = (request.form.get("caption") or "").strip()
+        file = request.files.get("photo")
+
+        photos_dir = os.path.join(app.static_folder, "uploads", "event-photos")
+        os.makedirs(photos_dir, exist_ok=True)
+        meta_path = os.path.join(photos_dir, "metadata.json")
+        photos = json.loads(open(meta_path).read()) if os.path.exists(meta_path) else []
+
+        photo_url = None
+        if file and file.filename:
+            _, ext = os.path.splitext(file.filename.lower())
+            if ext not in ALLOWED_PHOTO_EXTS:
+                return jsonify({"error": "Invalid file type"}), 400
+            filename = f"{int(_time.time())}_{_uuid.uuid4().hex[:8]}{ext}"
+            file.save(os.path.join(photos_dir, filename))
+            photo_url = f"/static/uploads/event-photos/{filename}"
+
+        if not photo_url and not caption:
+            return jsonify({"error": "Provide a caption or photo"}), 400
+
+        entry = {
+            "url": photo_url,
+            "caption": caption or "",
+            "username": session.get("username", "Guest"),
+            "user_id": str(session.get("user_id", "")),
+            "time": "Just now",
+        }
+        photos.insert(0, entry)
+        with open(meta_path, "w") as fh:
+            json.dump(photos[:200], fh)
+
+        _append_activity({
+            "user_id": str(session.get("user_id", "guest")),
+            "username": session.get("username", "someone"),
+            "type": "posted_photo",
+            "caption": caption or "shared a moment",
+            "photo_url": photo_url,
+            "time": "Just now",
+        })
+
+        return jsonify({"status": "uploaded", "url": photo_url})
 
     @app.route("/friends/list")
     def friends_list():

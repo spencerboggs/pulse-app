@@ -50,7 +50,7 @@
       </div>
 
       <div class="profile-section">
-        <h3>following</h3>
+        <h3>saved news</h3>
 
         {% if followed_insights %}
           <div class="music-info">
@@ -62,7 +62,24 @@
             {% endfor %}
           </div>
         {% else %}
-          <p style="color:#ddd;">You are not following any weekly insights yet.</p>
+          <p style="color:#ddd;">No saved news yet — heart stories in Weekly Insights.</p>
+        {% endif %}
+      </div>
+
+      <div class="profile-section">
+        <h3>saved events</h3>
+
+        {% if followed_events %}
+          <div class="music-info">
+            {% for event in followed_events %}
+              <p>
+                <span class="info-label">{{ event.title }}</span><br>
+                {{ event.date }} · {{ event.location }}
+              </p>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="color:#ddd;">No saved events yet — heart events in Weekly Insights.</p>
         {% endif %}
       </div>
 
