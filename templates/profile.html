@@ -9,6 +9,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
+    /* ====== Profile picture ====== */
+    .pfp-wrap {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+    .pfp-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .pfp-wrap:hover .pfp-overlay { opacity: 1; }
+
     /* ====== Spotify connection card (scoped overrides) ====== */
     .spotify-card {
       margin-top: 24px;
@@ -121,15 +145,44 @@
       <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
       <h2 id="profile-name">{{ display_name }}</h2>
 
-      <img id="profile-picture" src="{{ img_url }}" alt="Profile Picture" class="profile-pic">
+      <form id="pfp-form" action="{{ url_for('upload_profile_picture') }}" method="POST" enctype="multipart/form-data" style="display:none;">
+        <input id="pfp-input" type="file" name="profile_picture" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
+      </form>
+      <div class="pfp-wrap" onclick="document.getElementById('pfp-input').click()" title="Click to change photo">
+        <img id="profile-picture" src="{{ img_url }}" alt="Profile Picture" class="profile-pic">
+        <div class="pfp-overlay">change photo</div>
+      </div>
+
+      <div class="profile-section" id="music-taste-section">
+        <h3>music taste</h3>
+        <div class="music-info" id="music-taste-content">
+          <p style="opacity:0.55;font-size:0.88rem;">Loading…</p>
+        </div>
+      </div>
 
       <div class="profile-section">
-        <h3>music taste</h3>
+        <h3>saved news</h3>
         <div class="music-info">
-          <p><span class="info-label">favorite artist:</span> Tyler, The Creator</p>
-          <p><span class="info-label">favorite genre:</span> Neo-Soul</p>
-          <p><span class="info-label">most listened to song:</span> See You Again</p>
-          <p><span class="info-label">favorite album:</span> IGOR</p>
+          {% if followed_insights %}
+            {% for insight in followed_insights %}
+              <p><span class="info-label">{{ insight.title }}</span><br><small>{{ insight.date }}</small></p>
+            {% endfor %}
+          {% else %}
+            <p style="opacity:0.55;font-size:0.88rem;">No saved news — heart stories in Weekly Insights.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="profile-section">
+        <h3>saved events</h3>
+        <div class="music-info">
+          {% if followed_events %}
+            {% for event in followed_events %}
+              <p><span class="info-label">{{ event.title }}</span><br><small>{{ event.date }} · {{ event.location }}</small></p>
+            {% endfor %}
+          {% else %}
+            <p style="opacity:0.55;font-size:0.88rem;">No saved events — heart events in Weekly Insights.</p>
+          {% endif %}
         </div>
       </div>
       <!-- ================================================================== -->
@@ -250,7 +303,12 @@
           const res = await fetch('/spotify/save-artists', { credentials: 'same-origin' });
           const data = await res.json();
           if (res.ok) {
-            showToast(successToast, `Saved ${data.count} top artists.`);
+            showToast(successToast, `Synced ${data.count} artists.`);
+            renderMusicTaste({
+              topArtists: data.artists || [],
+              topGenres:  data.genres  || [],
+              topTracks:  data.tracks  || [],
+            });
           } else {
             showToast(errorToast, data.error || 'Sync failed.');
           }
@@ -262,6 +320,48 @@
           btn.textContent = original;
         }
       }
+
+      function renderMusicTaste(profile) {
+        const el = document.getElementById('music-taste-content');
+        const artists = (profile.topArtists || []).slice(0, 5);
+        const genres  = (profile.topGenres  || []).slice(0, 5);
+        const tracks  = (profile.topTracks  || []).slice(0, 3);
+
+        if (!artists.length && !genres.length) {
+          el.innerHTML = '<p style="opacity:0.55;font-size:0.88rem;">Connect Spotify below to populate your music taste.</p>';
+          return;
+        }
+
+        let html = '';
+        if (artists.length) {
+          html += '<p><span class="info-label">top artists:</span> ' + artists.join(', ') + '</p>';
+        }
+        if (genres.length) {
+          html += '<p><span class="info-label">top genres:</span> ' + genres.join(', ') + '</p>';
+        }
+        if (tracks.length) {
+          html += '<p><span class="info-label">top tracks:</span> ' + tracks.join(', ') + '</p>';
+        }
+        el.innerHTML = html;
+      }
+
+      async function loadMusicProfile() {
+        try {
+          const res = await fetch('/api/me/music-profile', { credentials: 'same-origin' });
+          if (!res.ok) return;
+          const data = await res.json();
+          renderMusicTaste(data.taste_profile || data.music_profile || {});
+        } catch (_) {}
+      }
+
+      loadMusicProfile();
+
+      // Auto-submit profile picture form when a file is chosen
+      document.getElementById('pfp-input').addEventListener('change', function () {
+        if (this.files && this.files.length > 0) {
+          document.getElementById('pfp-form').submit();
+        }
+      });
 
       async function disconnectSpotify(ev) {
         if (!confirm('Disconnect your Spotify account from Pulse?')) return;

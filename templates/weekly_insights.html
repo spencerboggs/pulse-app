@@ -360,6 +360,18 @@
     // ── Friends activity ─────────────────────────────────────
     var activityList = document.getElementById("activityList");
 
+    function activityAvatar(a) {
+      var inits = initials(a.username);
+      if (a.pfp_url) {
+        return '<div class="activity-avatar" style="padding:0;overflow:hidden;">' +
+          '<img src="' + esc(a.pfp_url) + '" alt="' + inits + '" ' +
+          'style="width:100%;height:100%;object-fit:cover;" ' +
+          'onerror="this.parentElement.style.padding=\'\';this.parentElement.textContent=\'' + inits + '\'">' +
+          '</div>';
+      }
+      return '<div class="activity-avatar">' + inits + '</div>';
+    }
+
     function renderActivity(items) {
       activityList.innerHTML = "";
       if (!items || !items.length) {
@@ -371,15 +383,16 @@
         el.className = "activity-item";
         if (a.type === "posted_photo" && a.photo_url) {
           el.innerHTML =
-            '<img class="activity-photo-thumb" src="' + esc(a.photo_url) + '" alt="photo">' +
+            activityAvatar(a) +
             '<div class="activity-text">' +
               '<span class="activity-user">@' + esc(a.username) + '</span> shared a photo' +
               (a.caption ? ': <span class="activity-title">' + esc(a.caption) + '</span>' : '') +
               '<div class="activity-time">' + esc(a.time || "") + '</div>' +
-            '</div>';
+            '</div>' +
+            '<img class="activity-photo-thumb" src="' + esc(a.photo_url) + '" alt="photo">';
         } else if (a.type === "posted_photo") {
           el.innerHTML =
-            '<div class="activity-avatar">' + initials(a.username) + '</div>' +
+            activityAvatar(a) +
             '<div class="activity-text">' +
               '<span class="activity-user">@' + esc(a.username) + '</span> shared: ' +
               '<span class="activity-title">' + esc(a.caption || "a moment") + '</span>' +
@@ -387,7 +400,7 @@
             '</div>';
         } else if (a.type === "liked_event") {
           el.innerHTML =
-            '<div class="activity-avatar">' + initials(a.username) + '</div>' +
+            activityAvatar(a) +
             '<div class="activity-text">' +
               '<span class="activity-user">@' + esc(a.username) + '</span> saved: ' +
               '<span class="activity-title">' + esc(a.title) + '</span>' +
@@ -395,7 +408,7 @@
             '</div>';
         } else {
           el.innerHTML =
-            '<div class="activity-avatar">' + initials(a.username) + '</div>' +
+            activityAvatar(a) +
             '<div class="activity-text">' +
               '<span class="activity-user">@' + esc(a.username) + '</span> liked: ' +
               '<span class="activity-title">' + esc(a.title) + '</span>' +

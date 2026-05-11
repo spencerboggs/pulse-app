@@ -275,6 +275,7 @@ def create_app() -> Flask:
 
         artists = r.json().get("items", [])
 
+        # Save individual artist rows for search/matching
         saved = 0
         for a in artists:
             row = {
@@ -283,11 +284,66 @@ def create_app() -> Flask:
                 "name": a["name"],
                 "image": a["images"][0]["url"] if a.get("images") else None
             }
+            try:
+                supabase.table("user_top_artists").upsert(row).execute()
+                saved += 1
+            except Exception:
+                pass
 
-            supabase.table("user_top_artists").upsert(row).execute()
-            saved += 1
+        # Collect artist names and all genres for the taste profile
+        artist_names = [a["name"] for a in artists]
+        seen_genres = {}
+        for a in artists:
+            for g in (a.get("genres") or []):
+                seen_genres[g] = seen_genres.get(g, 0) + 1
+        top_genres = [g for g, _ in sorted(seen_genres.items(), key=lambda x: -x[1])][:15]
 
-        return jsonify({"status": "saved", "count": saved})
+        # Also fetch top tracks for the taste profile
+        tracks_names = []
+        try:
+            rt = requests.get(
+                "https://api.spotify.com/v1/me/top/tracks",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"limit": 20, "time_range": "medium_term"},
+                timeout=10,
+            )
+            if rt.ok:
+                tracks_names = [t["name"] for t in rt.json().get("items", [])]
+        except Exception:
+            pass
+
+        # Merge into user_statistics.taste_profile
+        spotify_blob = {
+            "topArtists": artist_names,
+            "topGenres": top_genres,
+            "topTracks": tracks_names,
+        }
+        now = datetime.now(timezone.utc).isoformat()
+        try:
+            prev = fetch_user_statistics(str(user_id))
+            existing_taste = taste_profile_from_row(prev)
+            derived = taste_from_spotify_payload(spotify_blob)
+            merged = merge_spotify_into_taste(existing_taste, derived)
+            supabase.table(USER_STATISTICS_TABLE).upsert(
+                {
+                    "user_id": int(user_id),
+                    "spotify": spotify_blob,
+                    "taste_profile": merged,
+                    "onboarding": (prev or {}).get("onboarding") if isinstance(prev, dict) else {},
+                    "updated_at": now,
+                },
+                on_conflict="user_id",
+            ).execute()
+        except Exception:
+            pass
+
+        return jsonify({
+            "status": "saved",
+            "count": saved,
+            "artists": artist_names,
+            "genres": top_genres,
+            "tracks": tracks_names,
+        })
 
     @app.route("/search/artists")
     def search_artists():
@@ -374,10 +430,20 @@ def create_app() -> Flask:
             return url_for("static", filename="images/profile_placeholder.png")
 
     def get_full_name(u: dict) -> str:
-        first = u.get("first_name", "")
-        last = u.get("last_name", "")
+        first = (u.get("first_name") or "").strip()
+        last = (u.get("last_name") or "").strip()
         full = f"{first} {last}".strip()
-        return full if full else u.get("username", "Unknown")
+        return full if full else (u.get("username") or "Unknown")
+
+    def get_user_pfp_url(username: str):
+        if not username:
+            return None
+        slug = slugify(username)
+        uploads_path = os.path.join(app.static_folder, "uploads")
+        for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+            if os.path.exists(os.path.join(uploads_path, f"{slug}{ext}")):
+                return f"/static/uploads/{slug}{ext}"
+        return None
 
     def get_initials(name: str) -> str:
         parts = name.strip().split()
@@ -866,7 +932,8 @@ def create_app() -> Flask:
                 "username": u.get("username"),
                 "name": display_name,
                 "handle": f"@{u.get('username')}" if u.get("username") else "",
-                "initials": get_initials(display_name)
+                "initials": get_initials(display_name),
+                "pfp_url": get_user_pfp_url(u.get("username")),
             })
 
         return jsonify({"users": users})
@@ -1231,6 +1298,7 @@ def create_app() -> Flask:
                     "initials": get_initials(display_name),
                     "similarity": score,
                     "requested": oid in pending,
+                    "pfp_url": get_user_pfp_url(u.get("username")),
                 }
             )
         scored.sort(key=lambda x: (-x["similarity"], x.get("username") or ""))
@@ -1342,6 +1410,7 @@ def create_app() -> Flask:
                 _append_activity({
                     "user_id": str(session.get("user_id", "guest")),
                     "username": session.get("username", "someone"),
+                    "pfp_url": get_user_pfp_url(session.get("username", "")),
                     "type": "liked_insight",
                     "title": insight["title"],
                     "time": "Just now",
@@ -1379,6 +1448,7 @@ def create_app() -> Flask:
             _append_activity({
                 "user_id": str(session.get("user_id", "guest")),
                 "username": session.get("username", "someone"),
+                "pfp_url": get_user_pfp_url(session.get("username", "")),
                 "type": "liked_event",
                 "title": EVENTS[event_id]["title"],
                 "time": "Just now",
@@ -1456,6 +1526,7 @@ def create_app() -> Flask:
         _append_activity({
             "user_id": str(session.get("user_id", "guest")),
             "username": session.get("username", "someone"),
+            "pfp_url": get_user_pfp_url(session.get("username", "")),
             "type": "posted_photo",
             "caption": caption or "shared a moment",
             "photo_url": photo_url,
@@ -1536,6 +1607,7 @@ def create_app() -> Flask:
                     "name": get_full_name(u),
                     "handle": f"@{u['username']}" if u.get("username") else "",
                     "initials": get_initials(get_full_name(u)),
+                    "pfp_url": get_user_pfp_url(u.get("username")),
                 }
                 for u in (users.data or [])
             ]})

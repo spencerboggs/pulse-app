@@ -75,6 +75,12 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      overflow: hidden;
+    }
+    .conv-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
  
     .conv-info {
@@ -370,12 +376,19 @@
     }
  
     // ── Open a conversation ───────────────────────────────
-    function openConversation(userId, userName, userHandle) {
+    function openConversation(userId, userName, userHandle, pfpUrl) {
       currentReceiver = userId
       currentReceiverName = userName
  
       // update header
-      getEl("headerAvatar").textContent = initials(userName)
+      const headerAv = getEl("headerAvatar")
+      if (pfpUrl) {
+        headerAv.innerHTML = `<img src="${pfpUrl}" alt="${initials(userName)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML=initials(userName)">`
+        headerAv.style.padding = "0"
+      } else {
+        headerAv.innerHTML = initials(userName)
+        headerAv.style.padding = ""
+      }
       getEl("headerName").textContent = userName
       getEl("headerHandle").textContent = userHandle
  
@@ -398,15 +411,24 @@
     }
  
     // ── Add a conversation item to the sidebar ────────────
+    function convAvatarHtml(user) {
+      const inits = initials(user.name || user.username || "U")
+      if (user.pfp_url) {
+        return `<div class="conv-avatar" style="padding:0;"><img src="${user.pfp_url}" alt="${inits}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.padding='';this.parentElement.textContent='${inits}'"></div>`
+      }
+      return `<div class="conv-avatar">${inits}</div>`
+    }
+
     function addConvItem(user) {
       const item = document.createElement("div")
       item.className = "conv-item"
       item.dataset.userid = user.id
       item.dataset.name = user.name
       item.dataset.handle = user.handle || "@" + user.username
+      item.dataset.pfpUrl = user.pfp_url || ""
  
       item.innerHTML = `
-        <div class="conv-avatar">${initials(user.name || user.username)}</div>
+        ${convAvatarHtml(user)}
         <div class="conv-info">
           <div class="conv-name">${user.name || user.username}</div>
           <div class="conv-preview">${user.handle || "@" + user.username}</div>
@@ -414,7 +436,7 @@
       `
  
       item.addEventListener("click", () => {
-        openConversation(user.id, user.name || user.username, user.handle || "@" + user.username)
+        openConversation(user.id, user.name || user.username, user.handle || "@" + user.username, user.pfp_url || "")
       })
  
       getEl("convItems").appendChild(item)

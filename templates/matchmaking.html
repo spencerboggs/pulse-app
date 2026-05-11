@@ -134,6 +134,13 @@
       return ((p[0]||"U")[0] + ((p[1]||"")[0]||"")).toUpperCase();
     }
     function getEl(id) { return document.getElementById(id); }
+    function avatarHtml(u) {
+      const inits = esc(u.initials || initials(u.name || u.username || "U"));
+      if (u.pfp_url) {
+        return '<div class="user-avatar"><img src="' + esc(u.pfp_url) + '" alt="' + inits + '" onerror="this.parentElement.innerHTML=\'' + inits + '\'" style="width:100%;height:100%;object-fit:cover;border-radius:999px;"></div>';
+      }
+      return '<div class="user-avatar">' + inits + '</div>';
+    }
 
     // ── Invite link ──────────────────────────────────────────
     const INVITE_URL = "http://localhost:5000";
@@ -159,7 +166,6 @@
       const name = esc(u.name || u.username || "User");
       const handle = esc(u.handle || "@" + u.username);
       const id = esc(String(u.id));
-      const inits = esc(u.initials || initials(u.name || u.username || "U"));
 
       const el = document.createElement("article");
       el.className = "user-card request-card";
@@ -167,7 +173,7 @@
       el.innerHTML = `
         <div class="user-header"><div class="user-title">Sent you a friend request</div></div>
         <div class="user-main">
-          <div class="user-avatar">${inits}</div>
+          ${avatarHtml(u)}
           <div class="user-meta">
             <div class="user-name">${name}</div>
             <div class="user-handle">${handle}</div>
@@ -198,7 +204,6 @@
       const name = esc(u.name || u.username || "User");
       const handle = esc(u.handle || "@" + u.username);
       const id = esc(String(u.id));
-      const inits = esc(u.initials || initials(u.name || u.username || "U"));
       const btnLabel = u.requested ? "Requested" : "Add Friend";
       const btnDisabled = u.requested ? "disabled" : "";
 
@@ -210,7 +215,7 @@
       el.innerHTML = `
         <div class="user-header"><div class="user-title">Suggested for you</div></div>
         <div class="user-main">
-          <div class="user-avatar">${inits}</div>
+          ${avatarHtml(u)}
           <div class="user-meta">
             <div class="user-name">${name}</div>
             <div class="user-handle">${handle}</div>
@@ -267,22 +272,23 @@
       const name = esc(u.name || u.username || "User");
       const handle = esc(u.handle || "@" + (u.username||""));
       const id = esc(String(u.id));
-      const inits = esc(u.initials || initials(u.name || u.username || "U"));
-      searchResults.insertAdjacentHTML("beforeend", `
-        <article class="user-card search-card" data-userid="${id}">
-          <div class="user-header"><div class="user-title">Search result</div></div>
-          <div class="user-main">
-            <div class="user-avatar">${inits}</div>
-            <div class="user-meta">
-              <div class="user-name">${name}</div>
-              <div class="user-handle">${handle}</div>
-            </div>
-            <div class="user-actions">
-              <button class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="/u/${encodeURIComponent(u.username||u.name)}">View</a>
-            </div>
+      const article = document.createElement("article");
+      article.className = "user-card search-card";
+      article.dataset.userid = id;
+      article.innerHTML = `
+        <div class="user-header"><div class="user-title">Search result</div></div>
+        <div class="user-main">
+          ${avatarHtml(u)}
+          <div class="user-meta">
+            <div class="user-name">${name}</div>
+            <div class="user-handle">${handle}</div>
           </div>
-        </article>`);
+          <div class="user-actions">
+            <button class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
+            <a class="btn btn-primary" href="/u/${encodeURIComponent(u.username||u.name)}">View</a>
+          </div>
+        </div>`;
+      searchResults.appendChild(article);
     }
 
     let timer = null;
