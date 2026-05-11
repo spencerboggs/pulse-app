@@ -1342,9 +1342,46 @@ def create_app() -> Flask:
     def blocked_accounts():
         return render_template("blocked_accounts.html")
 
-    @app.route("/report")
+    # Problem reports persist to the problem_reports table along with the reporter (when signed in).
+    # The generated row id is shown back to the user as a reference number they can quote to support.
+    @app.route("/report", methods=["GET", "POST"])
     def report():
-        return render_template("report.html")
+        if request.method == "GET":
+            return render_template("report.html")
+
+        report_text = (request.form.get("report") or "").strip()
+        if not report_text:
+            flash("Please describe the problem before submitting.", "error")
+            return render_template("report.html", form_report=report_text)
+
+        # Cap the text to match the textarea's maxlength so an oversized paste does not blow up the row.
+        if len(report_text) > 2000:
+            report_text = report_text[:2000]
+
+        payload = {
+            "report": report_text,
+            "username": session.get("username"),
+        }
+        user_id_raw = session.get("user_id")
+        if user_id_raw:
+            try:
+                payload["user_id"] = int(user_id_raw)
+            except (TypeError, ValueError):
+                pass
+
+        try:
+            result = supabase.table("problem_reports").insert(payload).execute()
+        except Exception as e:
+            flash(f"Could not submit your report: {e}", "error")
+            return render_template("report.html", form_report=report_text)
+
+        rows = result.data or []
+        report_id = rows[0].get("id") if rows else None
+        if not report_id:
+            flash("Report saved, but no reference id was returned.", "error")
+            return render_template("report.html")
+
+        return render_template("report.html", submitted_report_id=report_id)
 
     @app.route("/spotify/test-top-artists")
     def spotify_test_top_artists():

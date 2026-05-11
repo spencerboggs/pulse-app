@@ -15,11 +15,43 @@
       <p class="subtitle">Report a Problem</p>
     </header>
     <section class="card">
-      <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
       <h2>Report a Problem</h2>
-      <p>Describe the issue you encountered. This is a placeholder page.</p>
-      <!-- ================================================================== -->
-      <p><a class="btn btn-ghost" href="{{ url_for('settings') }}">Back to Settings</a></p>
+      <p>Tell us what went wrong. Your report is sent straight to the Pulse team.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}" style="margin: 12px 0; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255, 246, 215, 0.08); color: var(--fg);">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% if submitted_report_id %}
+        <div class="flash flash-success" style="margin: 12px 0; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--border); background: rgba(120, 200, 130, 0.12); color: var(--fg);">
+          <strong>Thanks - your report was sent.</strong><br>
+          Reference ID: <code style="text-transform: none;">{{ submitted_report_id }}</code>
+        </div>
+      {% endif %}
+
+      <form action="{{ url_for('report') }}" method="post" novalidate>
+        <label for="report-text" style="display:block; margin-top: 8px;">What happened?</label>
+        <textarea
+          id="report-text"
+          name="report"
+          rows="6"
+          maxlength="2000"
+          required
+          placeholder="Describe the issue, what you were doing, and anything else that helps us reproduce it."
+          style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:#FFF6D7; color:#0b1d3a; font-family:inherit; resize:vertical; min-height:140px;"
+        >{{ form_report or '' }}</textarea>
+
+        <div style="display:flex; gap:10px; align-items:center; margin-top: 14px;">
+          <button type="submit" class="btn btn-primary">Submit Report</button>
+          <a class="btn btn-ghost" href="{{ url_for('settings') }}">Back to Settings</a>
+        </div>
+      </form>
     </section>
   </main>
 </body>
