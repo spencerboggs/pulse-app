@@ -1230,6 +1230,7 @@ def create_app() -> Flask:
                     "handle": f"@{u['username']}" if u.get("username") else "",
                     "initials": get_initials(display_name),
                     "similarity": score,
+                    "genres": op.get("topGenres") or [],
                     "requested": oid in pending,
                 }
             )
