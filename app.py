@@ -2,16 +2,18 @@ from flask import Flask, render_template, redirect, url_for, request, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from supabase import create_client, Client
 from dotenv import load_dotenv
-import os
-import re
-import requests
-import json
+from datetime import datetime, timedelta, timezone
+import os, re, json, requests
+import base64
+import hashlib
 from werkzeug.utils import secure_filename
-from datetime import datetime, timezone
 
-load_dotenv()
+# ============================================================
+# ENVIRONMENT LOADING
+# ============================================================
 
 # Supabase credentials are read from the environment so local runs need SUPABASE_URL and a suitable API key.
+load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 # Prefer service role for server-side writes when RLS is enabled; fall back to anon key.
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
@@ -117,6 +119,293 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = os.getenv("FLASK_SECRET", "SUPER_SECRET_KEY")
 
+    # ============================================================
+    # SPOTIFY HELPERS
+    # ============================================================
+
+    SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+    SPOTIFY_REDIRECT_URI = os.getenv(
+        "SPOTIFY_REDIRECT_URI", "http://127.0.0.1:5000/callback"
+    )
+    SPOTIFY_SCOPES = "user-top-read user-read-private"
+
+    def _b64url(data: bytes) -> str:
+        """URL-safe base64 encode without padding (PKCE)."""
+        return base64.urlsafe_b64encode(data).decode().rstrip("=")
+
+    def _make_pkce():
+        verifier = _b64url(os.urandom(32))
+        challenge = _b64url(hashlib.sha256(verifier.encode()).digest())
+        return verifier, challenge
+
+    def _save_spotify_tokens(user_id, token_json):
+        """Persist Spotify token + profile to the users row.
+
+        token_json is the JSON returned by Spotify's /api/token endpoint.
+        Also calls /v1/me to get the spotify user id + display name so we
+        can show 'Connected as X' in the UI.
+        """
+        access_token = token_json["access_token"]
+        refresh_token = token_json.get("refresh_token")
+        expires_in = int(token_json.get("expires_in", 3600))
+        expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+
+        # Look up the spotify profile so we know which account this is.
+        me = requests.get(
+            "https://api.spotify.com/v1/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=10,
+        )
+        spotify_user_id = None
+        spotify_display_name = None
+        if me.status_code == 200:
+            me_json = me.json()
+            spotify_user_id = me_json.get("id")
+            spotify_display_name = me_json.get("display_name") or me_json.get("id")
+
+        update_row = {
+            "spotify_access_token": access_token,
+            "spotify_token_expires_at": expires_at.isoformat(),
+            "spotify_connected_at": datetime.now(timezone.utc).isoformat(),
+        }
+        # Spotify only returns refresh_token on the initial exchange; preserve
+        # the existing one on subsequent refreshes if it's not re-sent.
+        if refresh_token:
+            update_row["spotify_refresh_token"] = refresh_token
+        if spotify_user_id:
+            update_row["spotify_user_id"] = spotify_user_id
+        if spotify_display_name:
+            update_row["spotify_display_name"] = spotify_display_name
+
+        supabase.table("users").update(update_row).eq("id", user_id).execute()
+        return spotify_user_id, spotify_display_name
+
+    def _get_valid_spotify_token(user_id):
+        """Return a non-expired access token for this user, refreshing if needed.
+
+        Returns None if the user has no Spotify connection or refresh fails.
+        """
+        res = (
+            supabase.table("users")
+            .select(
+                "spotify_access_token,"
+                "spotify_refresh_token,"
+                "spotify_token_expires_at"
+            )
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+        if not res.data:
+            return None
+
+        access_token = res.data.get("spotify_access_token")
+        refresh_token = res.data.get("spotify_refresh_token")
+        expires_at_str = res.data.get("spotify_token_expires_at")
+
+        if not access_token:
+            return None
+
+        # If the token is still good for >60s, use it as-is.
+        if expires_at_str:
+            try:
+                expires_at = datetime.fromisoformat(
+                    expires_at_str.replace("Z", "+00:00")
+                )
+                if expires_at > datetime.now(timezone.utc) + timedelta(seconds=60):
+                    return access_token
+            except ValueError:
+                pass  # bad timestamp, fall through and try to refresh
+
+        # Token expired (or unknown expiry) — try to refresh.
+        if not refresh_token:
+            return access_token  # last resort: caller will get 401 and re-auth
+
+        r = requests.post(
+            "https://accounts.spotify.com/api/token",
+            data={
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "client_id": SPOTIFY_CLIENT_ID,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=10,
+        )
+        if r.status_code != 200:
+            return None
+
+        new_json = r.json()
+        new_access = new_json["access_token"]
+        new_expires = datetime.now(timezone.utc) + timedelta(
+            seconds=int(new_json.get("expires_in", 3600))
+        )
+        update_row = {
+            "spotify_access_token": new_access,
+            "spotify_token_expires_at": new_expires.isoformat(),
+        }
+        # Spotify may rotate the refresh token.
+        if new_json.get("refresh_token"):
+            update_row["spotify_refresh_token"] = new_json["refresh_token"]
+        supabase.table("users").update(update_row).eq("id", user_id).execute()
+        return new_access
+
+    # ============================================================
+    # SPOTIFY ROUTES
+    # ============================================================
+
+    @app.route("/spotify/save-artists")
+    def save_artists():
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Not logged in to Pulse"}), 401
+
+        token = _get_valid_spotify_token(user_id)
+        if not token:
+            return jsonify({"error": "Not connected to Spotify"}), 401
+
+        r = requests.get(
+            url="https://api.spotify.com/v1/me/top/artists",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"limit": 20, "time_range": "medium_term"},
+            timeout=10,
+        )
+
+        if r.status_code != 200:
+            return jsonify({"error": "Spotify error", "status": r.status_code, "body": r.text}), r.status_code
+
+        artists = r.json().get("items", [])
+
+        # Save individual artist rows for search/matching
+        saved = 0
+        for a in artists:
+            row = {
+                "user_id": user_id,
+                "spotify_id": a["id"],
+                "name": a["name"],
+                "image": a["images"][0]["url"] if a.get("images") else None
+            }
+            try:
+                supabase.table("user_top_artists").upsert(row).execute()
+                saved += 1
+            except Exception:
+                pass
+
+        # Collect artist names and all genres for the taste profile
+        artist_names = [a["name"] for a in artists]
+        seen_genres = {}
+        for a in artists:
+            for g in (a.get("genres") or []):
+                seen_genres[g] = seen_genres.get(g, 0) + 1
+        top_genres = [g for g, _ in sorted(seen_genres.items(), key=lambda x: -x[1])][:15]
+
+        # Also fetch top tracks for the taste profile
+        tracks_names = []
+        try:
+            rt = requests.get(
+                "https://api.spotify.com/v1/me/top/tracks",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"limit": 20, "time_range": "medium_term"},
+                timeout=10,
+            )
+            if rt.ok:
+                tracks_names = [t["name"] for t in rt.json().get("items", [])]
+        except Exception:
+            pass
+
+        # Merge into user_statistics.taste_profile
+        spotify_blob = {
+            "topArtists": artist_names,
+            "topGenres": top_genres,
+            "topTracks": tracks_names,
+        }
+        now = datetime.now(timezone.utc).isoformat()
+        try:
+            prev = fetch_user_statistics(str(user_id))
+            existing_taste = taste_profile_from_row(prev)
+            derived = taste_from_spotify_payload(spotify_blob)
+            merged = merge_spotify_into_taste(existing_taste, derived)
+            supabase.table(USER_STATISTICS_TABLE).upsert(
+                {
+                    "user_id": int(user_id),
+                    "spotify": spotify_blob,
+                    "taste_profile": merged,
+                    "onboarding": (prev or {}).get("onboarding") if isinstance(prev, dict) else {},
+                    "updated_at": now,
+                },
+                on_conflict="user_id",
+            ).execute()
+        except Exception:
+            pass
+
+        return jsonify({
+            "status": "saved",
+            "count": saved,
+            "artists": artist_names,
+            "genres": top_genres,
+            "tracks": tracks_names,
+        })
+
+    @app.route("/search/artists")
+    def search_artists():
+        query = request.args.get("q", "").strip()
+
+        if not query:
+            return jsonify([])
+
+        res = (
+            supabase.table("user_top_artists")
+            .select("spotify_id,name,image")
+            .ilike("name", f"%{query}%")
+            .limit(20)
+            .execute()
+        )
+
+        # remove duplicates by spotify_id
+        unique_artists = {}
+        for a in res.data:
+            unique_artists[a["spotify_id"]] = {
+                "spotify_id": a["spotify_id"],
+                "name": a["name"],
+                "image": a.get("image")
+            }
+
+        return jsonify(list(unique_artists.values()))
+
+    @app.route("/spotify/top-artists")
+    def spotify_top_artists():
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Not logged in to Pulse"}), 401
+
+        token = _get_valid_spotify_token(user_id)
+        if not token:
+            return jsonify({"error": "Not connected to Spotify. Connect on your profile page."}), 401
+
+        r = requests.get(
+            "https://api.spotify.com/v1/me/top/artists",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"limit": 20, "time_range": "medium_term"},
+            timeout=10,
+        )
+
+        if r.status_code != 200:
+            return jsonify({"error": "Spotify error", "status": r.status_code, "body": r.text}), r.status_code
+
+        data = r.json()
+
+        artists = [
+            {
+                "id": a["id"],
+                "name": a["name"],
+                "image": a["images"][0]["url"] if a.get("images") else None
+            }
+            for a in data.get("items", [])
+        ]
+        return jsonify(artists)
+
+    # ============================================================
+    # HELPERS
+    # ============================================================
     # Shared helpers for profiles, Supabase rows, and similarity scoring.
 
     def slugify(name: str) -> str:
@@ -139,12 +428,22 @@ def create_app() -> Flask:
         if images:
             latest = max(images, key=lambda f: os.path.getmtime(os.path.join(uploads_path, f)))
             return url_for("static", filename="images/profile_placeholder.png")
-    
+
     def get_full_name(u: dict) -> str:
-        first = u.get("first_name", "")
-        last = u.get("last_name", "")
+        first = (u.get("first_name") or "").strip()
+        last = (u.get("last_name") or "").strip()
         full = f"{first} {last}".strip()
-        return full if full else u.get("username", "Unknown")
+        return full if full else (u.get("username") or "Unknown")
+
+    def get_user_pfp_url(username: str):
+        if not username:
+            return None
+        slug = slugify(username)
+        uploads_path = os.path.join(app.static_folder, "uploads")
+        for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp"):
+            if os.path.exists(os.path.join(uploads_path, f"{slug}{ext}")):
+                return f"/static/uploads/{slug}{ext}"
+        return None
 
     def get_initials(name: str) -> str:
         parts = name.strip().split()
@@ -171,7 +470,7 @@ def create_app() -> Flask:
             f2 = supabase.table("friendships").select("user_id") \
                 .eq("friend_id", str(user_id)).eq("status", "accepted").execute()
             ids = list({r["friend_id"] for r in (f1.data or [])} |
-                    {r["user_id"] for r in (f2.data or [])})
+                       {r["user_id"] for r in (f2.data or [])})
             return ids
         except Exception:
             return []
@@ -286,11 +585,11 @@ def create_app() -> Flask:
         audio_score = _audio_cosine(p1.get("audioFeatures") or {}, p2.get("audioFeatures") or {})
         decade_score = _jaccard_list(p1.get("favoriteDecades") or [], p2.get("favoriteDecades") or [])
         total = (
-            artist_score * w["artists"]
-            + genre_score * w["genres"]
-            + track_score * w["tracks"]
-            + audio_score * w["audioFeatures"]
-            + decade_score * w["decades"]
+                artist_score * w["artists"]
+                + genre_score * w["genres"]
+                + track_score * w["tracks"]
+                + audio_score * w["audioFeatures"]
+                + decade_score * w["decades"]
         )
         return round(total * 100) / 100
 
@@ -420,7 +719,6 @@ def create_app() -> Flask:
             }
         return base
 
-
     # Route handlers for pages and JSON endpoints used by the Pulse web client.
 
     @app.route("/")
@@ -531,21 +829,28 @@ def create_app() -> Flask:
         username = session.get("username", "Guest")
         slug = slugify(username)
         img_url = pick_user_image_by_slug(slug)
-        favorite_ids = session.get("favorite_insights", [])
-        followed_insights = [item for item in WEEKLY_INSIGHTS if item["id"] in favorite_ids]
+        favorite_insight_ids = session.get("favorite_insights", [])
+        followed_insights = [item for item in WEEKLY_INSIGHTS if item["id"] in favorite_insight_ids]
+        favorite_event_ids = session.get("favorite_events", [])
+        followed_events = [
+            {"id": eid, **EVENTS[eid]}
+            for eid in favorite_event_ids
+            if eid in EVENTS
+        ]
         return render_template(
             "profile.html",
             img_url=img_url,
             display_name=username,
-            followed_insights=followed_insights
-
+            followed_insights=followed_insights,
+            followed_events=followed_events,
         )
+
     ALLOWED_IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "gif"}
 
     def allowed_image(filename: str) -> bool:
         return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXTS
 
-#Used to Change PFP
+    # Used to Change PFP
     @app.route("/profile/upload-picture", methods=["POST"])
     def upload_profile_picture():
         if "user_id" not in session:
@@ -571,7 +876,6 @@ def create_app() -> Flask:
         uploads_path = os.path.join(app.static_folder, "uploads")
         os.makedirs(uploads_path, exist_ok=True)
 
-    
         for old_ext in ALLOWED_IMAGE_EXTS:
             old_path = os.path.join(uploads_path, f"{slug}.{old_ext}")
             if os.path.exists(old_path):
@@ -583,7 +887,6 @@ def create_app() -> Flask:
 
         flash("Profile picture updated!", "success")
         return redirect(url_for("profile"))
-
 
     @app.route("/u/<path:username>")
     def user_profile(username):
@@ -629,7 +932,8 @@ def create_app() -> Flask:
                 "username": u.get("username"),
                 "name": display_name,
                 "handle": f"@{u.get('username')}" if u.get("username") else "",
-                "initials": get_initials(display_name)
+                "initials": get_initials(display_name),
+                "pfp_url": get_user_pfp_url(u.get("username")),
             })
 
         return jsonify({"users": users})
@@ -668,7 +972,6 @@ def create_app() -> Flask:
         event_out = dict(event)
         event_out["image_url"] = url_for("static", filename=event["image"])
         return jsonify(event_out)
-
 
     @app.route("/concert-map")
     def concert_map():
@@ -711,7 +1014,8 @@ def create_app() -> Flask:
                         if not elat and not elng:
                             continue
                         images = e.get("images", [])
-                        img = next((i["url"] for i in images if i.get("ratio") == "16_9" and i.get("width", 0) >= 640), None)
+                        img = next((i["url"] for i in images if i.get("ratio") == "16_9" and i.get("width", 0) >= 640),
+                                   None)
                         events_out.append({
                             "name": e.get("name", "Concert"),
                             "date": e.get("dates", {}).get("start", {}).get("localDate", "TBA"),
@@ -973,7 +1277,8 @@ def create_app() -> Flask:
         my_p = taste_profile_from_row(my_row)
         pending = set()
         try:
-            prq = supabase.table("friendships").select("friend_id").eq("user_id", str(uid)).eq("status", "pending").execute()
+            prq = supabase.table("friendships").select("friend_id").eq("user_id", str(uid)).eq("status",
+                                                                                               "pending").execute()
             for r in prq.data or []:
                 pending.add(str(r.get("friend_id")))
         except Exception:
@@ -992,7 +1297,9 @@ def create_app() -> Flask:
                     "handle": f"@{u['username']}" if u.get("username") else "",
                     "initials": get_initials(display_name),
                     "similarity": score,
+                    "genres": op.get("topGenres") or [],
                     "requested": oid in pending,
+                    "pfp_url": get_user_pfp_url(u.get("username")),
                 }
             )
         scored.sort(key=lambda x: (-x["similarity"], x.get("username") or ""))
@@ -1082,7 +1389,152 @@ def create_app() -> Flask:
 
     @app.route("/weekly-insights")
     def weekly_insights():
-        return render_template("weekly_insights.html")
+        favorites = session.get("favorite_insights", [])
+        insights = []
+        for item in WEEKLY_INSIGHTS:
+            insight = dict(item)
+            insight["is_favorited"] = item["id"] in favorites
+            insights.append(insight)
+        return render_template("weekly_insights.html", insights=insights)
+
+    @app.post("/api/insights/favorite/<insight_id>")
+    def api_toggle_favorite_insight(insight_id):
+        favorites = session.get("favorite_insights", [])
+        if insight_id in favorites:
+            favorites.remove(insight_id)
+            favorited = False
+        else:
+            favorites.append(insight_id)
+            favorited = True
+            insight = next((i for i in WEEKLY_INSIGHTS if i["id"] == insight_id), None)
+            if insight:
+                _append_activity({
+                    "user_id": str(session.get("user_id", "guest")),
+                    "username": session.get("username", "someone"),
+                    "pfp_url": get_user_pfp_url(session.get("username", "")),
+                    "type": "liked_insight",
+                    "title": insight["title"],
+                    "time": "Just now",
+                })
+        session["favorite_insights"] = favorites
+        return jsonify({"favorited": favorited})
+
+    @app.get("/api/events-feed")
+    def api_events_feed():
+        favorites = session.get("favorite_events", [])
+        out = []
+        for event_id, e in EVENTS.items():
+            out.append({
+                "id": event_id,
+                "title": e["title"],
+                "genre": e["genre"],
+                "date": e["date"],
+                "location": e["location"],
+                "description": e["description"],
+                "is_favorited": event_id in favorites,
+            })
+        return jsonify({"events": out})
+
+    @app.post("/api/events-feed/favorite/<event_id>")
+    def api_toggle_favorite_event(event_id):
+        if event_id not in EVENTS:
+            return jsonify({"error": "Event not found"}), 404
+        favorites = session.get("favorite_events", [])
+        if event_id in favorites:
+            favorites.remove(event_id)
+            favorited = False
+        else:
+            favorites.append(event_id)
+            favorited = True
+            _append_activity({
+                "user_id": str(session.get("user_id", "guest")),
+                "username": session.get("username", "someone"),
+                "pfp_url": get_user_pfp_url(session.get("username", "")),
+                "type": "liked_event",
+                "title": EVENTS[event_id]["title"],
+                "time": "Just now",
+            })
+        session["favorite_events"] = favorites
+        return jsonify({"favorited": favorited})
+
+    @app.get("/api/friends-activity")
+    def api_friends_activity():
+        current_uid = str(session.get("user_id", ""))
+        try:
+            uid_int = int(current_uid)
+            friend_ids = {str(fid) for fid in get_friends_for_user(uid_int)}
+        except (TypeError, ValueError):
+            friend_ids = set()
+        log = _load_activity()
+        activity = [e for e in log if str(e.get("user_id")) in friend_ids]
+        return jsonify({"activity": activity[:20]})
+
+    ALLOWED_PHOTO_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+    @app.get("/api/event-photos")
+    def get_event_photos():
+        photos_dir = os.path.join(app.static_folder, "uploads", "event-photos")
+        os.makedirs(photos_dir, exist_ok=True)
+        meta_path = os.path.join(photos_dir, "metadata.json")
+        all_photos = json.loads(open(meta_path).read()) if os.path.exists(meta_path) else []
+        current_uid = str(session.get("user_id", ""))
+        try:
+            uid_int = int(current_uid)
+            friend_ids = {str(fid) for fid in get_friends_for_user(uid_int)}
+        except (TypeError, ValueError):
+            friend_ids = set()
+        allowed = friend_ids | {current_uid}
+        if current_uid and allowed:
+            photos = [p for p in all_photos if str(p.get("user_id", "")) in allowed]
+        else:
+            photos = all_photos
+        return jsonify({"photos": photos})
+
+    @app.post("/api/event-photos")
+    def upload_event_photo():
+        import time as _time, uuid as _uuid
+        caption = (request.form.get("caption") or "").strip()
+        file = request.files.get("photo")
+
+        photos_dir = os.path.join(app.static_folder, "uploads", "event-photos")
+        os.makedirs(photos_dir, exist_ok=True)
+        meta_path = os.path.join(photos_dir, "metadata.json")
+        photos = json.loads(open(meta_path).read()) if os.path.exists(meta_path) else []
+
+        photo_url = None
+        if file and file.filename:
+            _, ext = os.path.splitext(file.filename.lower())
+            if ext not in ALLOWED_PHOTO_EXTS:
+                return jsonify({"error": "Invalid file type"}), 400
+            filename = f"{int(_time.time())}_{_uuid.uuid4().hex[:8]}{ext}"
+            file.save(os.path.join(photos_dir, filename))
+            photo_url = f"/static/uploads/event-photos/{filename}"
+
+        if not photo_url and not caption:
+            return jsonify({"error": "Provide a caption or photo"}), 400
+
+        entry = {
+            "url": photo_url,
+            "caption": caption or "",
+            "username": session.get("username", "Guest"),
+            "user_id": str(session.get("user_id", "")),
+            "time": "Just now",
+        }
+        photos.insert(0, entry)
+        with open(meta_path, "w") as fh:
+            json.dump(photos[:200], fh)
+
+        _append_activity({
+            "user_id": str(session.get("user_id", "guest")),
+            "username": session.get("username", "someone"),
+            "pfp_url": get_user_pfp_url(session.get("username", "")),
+            "type": "posted_photo",
+            "caption": caption or "shared a moment",
+            "photo_url": photo_url,
+            "time": "Just now",
+        })
+
+        return jsonify({"status": "uploaded", "url": photo_url})
 
     @app.route("/friends/list")
     def friends_list():
@@ -1156,6 +1608,7 @@ def create_app() -> Flask:
                     "name": get_full_name(u),
                     "handle": f"@{u['username']}" if u.get("username") else "",
                     "initials": get_initials(get_full_name(u)),
+                    "pfp_url": get_user_pfp_url(u.get("username")),
                 }
                 for u in (users.data or [])
             ]})
@@ -1320,7 +1773,7 @@ def create_app() -> Flask:
     @app.route("/message")
     def message():
         return render_template("message.html")
-    
+
     # Push subscription storage remains available when the client registers a web push endpoint.
 
     @app.route("/api/save_subscription", methods=["POST"])
@@ -1383,6 +1836,73 @@ def create_app() -> Flask:
 
         return render_template("report.html", submitted_report_id=report_id)
 
+    @app.route("/search/similar-users-by-artist/<spotify_artist_id>")
+    def similar_users_by_artist(spotify_artist_id):
+        current_user_id = session.get("user_id")
+
+        if not current_user_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        # Find all users who have this artist
+        artist_users = (
+            supabase.table("user_top_artists")
+            .select("user_id")
+            .eq("spotify_id", spotify_artist_id)
+            .neq("user_id", current_user_id)
+            .execute()
+        )
+
+        if not artist_users.data:
+            return jsonify([])
+
+        matched_users = []
+        for row in artist_users.data:
+            other_user_id = row["user_id"]
+
+            # Get current user's artists
+            current_artists_res = (
+                supabase.table("user_top_artists")
+                .select("spotify_id")
+                .eq("user_id", current_user_id)
+                .execute()
+            )
+
+            # Get other user's artists
+            other_artists_res = (
+                supabase.table("user_top_artists")
+                .select("spotify_id")
+                .eq("user_id", other_user_id)
+                .execute()
+            )
+
+            current_artist_ids = {a["spotify_id"] for a in current_artists_res.data}
+            other_artist_ids = {a["spotify_id"] for a in other_artists_res.data}
+
+            similarity_score = len(current_artist_ids & other_artist_ids)
+
+            user_res = (
+                supabase.table("users")
+                .select("id,username,email")
+                .eq("id", other_user_id)
+                .single()
+                .execute()
+            )
+
+            if user_res.data:
+                matched_users.append({
+                    "user_id": user_res.data["id"],
+                    "username": user_res.data["username"],
+                    "email": user_res.data["email"],
+                    "similarity_score": similarity_score
+                })
+
+        matched_users.sort(key=lambda x: x["similarity_score"], reverse=True)
+        return jsonify(matched_users)
+
+    # ===== Spotify Retrieval =====
+    # Test endpoint that allows manual API calls using a Bearer token
+    # from the request header instead of the Flask session.
+    # Useful for Postman testing or debugging OAuth flow.
     @app.route("/spotify/test-top-artists")
     def spotify_test_top_artists():
         auth = request.headers.get("Authorization", "")
@@ -1396,6 +1916,7 @@ def create_app() -> Flask:
             headers={"Authorization": f"Bearer {token}"},
             params={"limit": 20, "time_range": "medium_term"}
         )
+        # If Spotify responds with an error, forward details to the client
 
         if r.status_code != 200:
             return jsonify({"error": "Spotify error", "status": r.status_code, "body": r.text}), r.status_code
@@ -1408,8 +1929,247 @@ def create_app() -> Flask:
             artists.append({"id": a["id"], "name": a["name"], "image": image})
 
         return jsonify(artists)
-    
-    # Messaging endpoints persist rows in Supabase for basic send flows during demos.
+
+    # ============================================================
+    # SPOTIFY OAUTH (PKCE) + ACCOUNT CONNECTION
+    # ============================================================
+
+    # Step 1 of 2: send the user to Spotify's consent page.
+    # Requires the user to already be logged into Pulse so we know
+    # which account to attach the Spotify connection to.
+    @app.route("/spotify/login")
+    def spotify_login():
+        if "user_id" not in session:
+            flash("Log in to Pulse first, then connect Spotify.", "error")
+            return redirect(url_for("auth"))
+
+        verifier, challenge = _make_pkce()
+        session["spotify_verifier"] = verifier
+
+        auth_url = (
+            "https://accounts.spotify.com/authorize"
+            f"?client_id={SPOTIFY_CLIENT_ID}"
+            f"&response_type=code"
+            f"&redirect_uri={requests.utils.quote(SPOTIFY_REDIRECT_URI, safe='')}"
+            f"&scope={requests.utils.quote(SPOTIFY_SCOPES)}"
+            f"&code_challenge_method=S256"
+            f"&code_challenge={challenge}"
+        )
+        return redirect(auth_url)
+
+    # Step 2 of 2: Spotify redirects back here with ?code=...
+    # We exchange the code for tokens, fetch the spotify profile,
+    # persist everything to the users table, then send the user
+    # back to their profile page.
+    @app.route("/callback")
+    def spotify_callback():
+        user_id = session.get("user_id")
+        if not user_id:
+            flash("Your session expired. Log in and try again.", "error")
+            return redirect(url_for("auth"))
+
+        code = request.args.get("code")
+        if not code:
+            err = request.args.get("error", "no_code")
+            flash(f"Spotify did not return an auth code ({err}).", "error")
+            return redirect(url_for("profile"))
+
+        verifier = session.pop("spotify_verifier", None)
+        if not verifier:
+            flash("Missing PKCE verifier — please retry the connection.", "error")
+            return redirect(url_for("profile"))
+
+        token_res = requests.post(
+            "https://accounts.spotify.com/api/token",
+            data={
+                "client_id": SPOTIFY_CLIENT_ID,
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": SPOTIFY_REDIRECT_URI,
+                "code_verifier": verifier,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            timeout=10,
+        )
+
+        if token_res.status_code != 200:
+            flash(f"Spotify token exchange failed: {token_res.text}", "error")
+            return redirect(url_for("profile"))
+
+        token_json = token_res.json()
+
+        # Persist tokens + spotify profile info to the users row.
+        try:
+            _save_spotify_tokens(user_id, token_json)
+        except Exception as e:
+            flash(f"Could not save Spotify connection: {e}", "error")
+            return redirect(url_for("profile"))
+
+        return redirect(url_for("profile") + "?spotify=connected")
+
+    # JSON endpoint the profile page polls on load to render either
+    # the "Connect" button or the "Connected as X" state.
+    @app.route("/spotify/status")
+    def spotify_status():
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"connected": False, "reason": "not_logged_in"}), 401
+
+        res = (
+            supabase.table("users")
+            .select(
+                "spotify_user_id,"
+                "spotify_display_name,"
+                "spotify_connected_at"
+            )
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+        data = res.data or {}
+        connected = bool(data.get("spotify_user_id"))
+        return jsonify({
+            "connected": connected,
+            "spotify_user_id": data.get("spotify_user_id"),
+            "spotify_display_name": data.get("spotify_display_name"),
+            "connected_at": data.get("spotify_connected_at"),
+        })
+
+    # Clears Spotify columns on the user row. POST-only so it's not
+    # triggerable by a stray <img src> or pre-fetcher.
+    @app.route("/spotify/disconnect", methods=["POST"])
+    def spotify_disconnect():
+        user_id = session.get("user_id")
+        if not user_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        supabase.table("users").update({
+            "spotify_user_id": None,
+            "spotify_display_name": None,
+            "spotify_access_token": None,
+            "spotify_refresh_token": None,
+            "spotify_token_expires_at": None,
+            "spotify_connected_at": None,
+        }).eq("id", user_id).execute()
+
+        # Also clear the legacy session token if present.
+        session.pop("spotify_access_token", None)
+        session.pop("spotify_verifier", None)
+
+        return jsonify({"status": "disconnected"})
+
+    @app.route("/connections/create", methods=["POST"])
+    def create_connection():
+        current_user_id = session.get("user_id")
+        data = request.get_json()
+
+        if not current_user_id:
+            return jsonify({"error": "Not logged in"}), 401
+
+        match_user_id = data.get("match_user_id")
+        similarity_score = data.get("similarity_score", 0)
+
+        if not match_user_id:
+            return jsonify({"error": "Missing match_user_id"}), 400
+
+        row = {
+            "user_id": current_user_id,
+            "match_user_id": match_user_id,
+            "similarity_score": similarity_score
+        }
+
+        supabase.table("connections").upsert(row).execute()
+
+        return jsonify({"status": "connection created"})
+
+    # Demo route: returns seeded top artists for a suggested user
+    @app.route("/demo/user-artists/<username>")
+    def demo_user_artists(username):
+        demo_artists = {
+            "lenaverse": [
+                "Taylor Swift", "SZA", "Lana Del Rey", "Phoebe Bridgers", "Clairo",
+                "The Marías", "Beabadoobee", "Gracie Abrams", "Olivia Rodrigo", "Mitski"
+            ],
+            "c0debycaleb": [
+                "Drake", "Travis Scott", "Kendrick Lamar", "Future", "J. Cole",
+                "Metro Boomin", "The Weeknd", "21 Savage", "Lil Uzi Vert", "Don Toliver"
+            ],
+            "itsmayac": [
+                "NewJeans", "TWICE", "BLACKPINK", "LE SSERAFIM", "IVE",
+                "aespa", "Red Velvet", "IU", "NCT 127", "Stray Kids"
+            ],
+            "danthebuilder": [
+                "Linkin Park", "Bring Me The Horizon", "System of a Down", "Slipknot", "Deftones",
+                "Three Days Grace", "Breaking Benjamin", "Avenged Sevenfold", "Papa Roach", "Paramore"
+            ],
+            "elinavdev": [
+                "Arctic Monkeys", "The 1975", "Tame Impala", "The Strokes", "Wallows",
+                "Cigarettes After Sex", "Joji", "Mac DeMarco", "TV Girl", "Rex Orange County"
+            ],
+            "zoeyk.dev": [
+                "Bad Bunny", "Kali Uchis", "Karol G", "ROSALÍA", "J Balvin",
+                "Rauw Alejandro", "Feid", "Peso Pluma", "Shakira", "Ozuna"
+            ],
+            "norapixel": [
+                "Coldplay", "OneRepublic", "Imagine Dragons", "Adele", "Ed Sheeran",
+                "Billie Eilish", "Shawn Mendes", "Dua Lipa", "Harry Styles", "Sam Smith"
+            ]
+        }
+
+        return jsonify({
+            "username": username,
+            "artists": demo_artists.get(username, ["No artists found"])
+        })
+
+    @app.route("/artists/overview")
+    def artists_overview():
+        # Pull artist rows from the database
+        res = (
+            supabase.table("user_top_artists")
+            .select("artist_id,name,user_id")
+            .order("name")
+            .execute()
+        )
+
+        rows = res.data if res.data else []
+
+        if not rows:
+            return jsonify([])
+
+        # Get all users so we can map user_id -> username
+        users_res = (
+            supabase.table("users")
+            .select("id,username")
+            .execute()
+        )
+
+        users = users_res.data if users_res.data else []
+        user_lookup = {u["id"]: u["username"] for u in users}
+
+        # Group by artist
+        grouped = {}
+
+        for row in rows:
+            artist_id = row["artist_id"]
+            artist_name = row["name"]
+            username = user_lookup.get(row["user_id"], f"User {row['user_id']}")
+
+            if artist_id not in grouped:
+                grouped[artist_id] = {
+                    "artist_id": artist_id,
+                    "artist_name": artist_name,
+                    "users": []
+                }
+
+            if username not in grouped[artist_id]["users"]:
+                grouped[artist_id]["users"].append(username)
+
+        # Convert dict to list and sort by number of users descending
+        result = list(grouped.values())
+        result.sort(key=lambda x: len(x["users"]), reverse=True)
+
+        # Only show first 10 artists
+        return jsonify(result[:10])
 
     @app.route("/api/send_message", methods=["POST"])
     def send_message():
@@ -1431,7 +2191,6 @@ def create_app() -> Flask:
 
         return jsonify(result.data)
 
-
     @app.route("/api/get_messages/<recipient_id>")
     def get_messages(recipient_id):
         if "user_id" not in session:
@@ -1442,7 +2201,8 @@ def create_app() -> Flask:
 
         result = supabase.table("messages") \
             .select("*") \
-            .or_(f"and(sender_id.eq.{user_id},recipient_id.eq.{recipient_id}),and(sender_id.eq.{recipient_id},recipient_id.eq.{user_id})") \
+            .or_(
+            f"and(sender_id.eq.{user_id},recipient_id.eq.{recipient_id}),and(sender_id.eq.{recipient_id},recipient_id.eq.{user_id})") \
             .order("created_at") \
             .execute()
 

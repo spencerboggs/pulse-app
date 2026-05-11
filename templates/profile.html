@@ -7,6 +7,131 @@
   <title>Pulse - Profile</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ====== Profile picture ====== */
+    .pfp-wrap {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+      border-radius: 50%;
+    }
+    .pfp-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .pfp-wrap:hover .pfp-overlay { opacity: 1; }
+
+    /* ====== Spotify connection card (scoped overrides) ====== */
+    .spotify-card {
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: 14px;
+      background: #f7f7f8;
+      border: 1px solid #ececef;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .spotify-card h3 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+    }
+    .spotify-card .spotify-logo {
+      width: 22px;
+      height: 22px;
+      display: inline-block;
+      background: #1DB954;
+      border-radius: 50%;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .spotify-card .spotify-logo::after {
+      /* simple inline "S" so we don't need an asset */
+      content: "S";
+      position: absolute;
+      inset: 0;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .spotify-card .spotify-status {
+      font-size: 14px;
+      color: #555;
+      margin: 0;
+    }
+    .spotify-card .spotify-status strong { color: #111; }
+    .spotify-card .spotify-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn-spotify {
+      background: #1DB954;
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 120ms ease;
+    }
+    .btn-spotify:hover { background: #17a347; }
+    .btn-secondary {
+      background: #fff;
+      color: #333;
+      border: 1px solid #d8d8dc;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: #f0f0f2; }
+    .btn-danger-ghost {
+      background: transparent;
+      color: #b00020;
+      border: 1px solid #f0c0c8;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .btn-danger-ghost:hover { background: #fff5f6; }
+    .toast {
+      margin-top: 16px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      display: none;
+    }
+    .toast.success { background: #e6f7ec; color: #0f5132; border: 1px solid #b7e4c5; }
+    .toast.error   { background: #fdecee; color: #842029; border: 1px solid #f3c2c8; }
+    .muted { color: #888; font-size: 12px; }
+  </style>
 </head>
 
 <body>
@@ -17,68 +142,73 @@
     </header>
 
     <section class="card">
+      <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
       <h2 id="profile-name">{{ display_name }}</h2>
 
-      <form id="profile-upload-form" action="{{ url_for('upload_profile_picture') }}" method="POST" enctype="multipart/form-data">
-        <input
-          id="profile-file"
-          type="file"
-          name="profile_picture"
-          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-          hidden
-        />
-
-        <button type="button" id="profile-pic-btn" style="border:0; padding:0; background:transparent; cursor:pointer;">
-          <img
-            id="profile-picture"
-            src="{{ img_url }}"
-            alt="Profile Picture"
-            class="profile-pic"
-            title="Click to upload a new profile picture"
-          />
-        </button>
+      <form id="pfp-form" action="{{ url_for('upload_profile_picture') }}" method="POST" enctype="multipart/form-data" style="display:none;">
+        <input id="pfp-input" type="file" name="profile_picture" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
       </form>
+      <div class="pfp-wrap" onclick="document.getElementById('pfp-input').click()" title="Click to change photo">
+        <img id="profile-picture" src="{{ img_url }}" alt="Profile Picture" class="profile-pic">
+        <div class="pfp-overlay">change photo</div>
+      </div>
 
-      <div class="profile-section">
+      <div class="profile-section" id="music-taste-section">
         <h3>music taste</h3>
-        <div class="music-info">
-          <p><span class="info-label">favorite artist:</span> Tyler, The Creator</p>
-          <p><span class="info-label">favorite genre:</span> Neo-Soul</p>
-          <p><span class="info-label">most listened to song:</span> See You Again</p>
-          <p><span class="info-label">favorite album:</span> IGOR</p>
+        <div class="music-info" id="music-taste-content">
+          <p style="opacity:0.55;font-size:0.88rem;">Loading…</p>
         </div>
       </div>
 
       <div class="profile-section">
-        <h3>following</h3>
-
-        {% if followed_insights %}
-          <div class="music-info">
+        <h3>saved news</h3>
+        <div class="music-info">
+          {% if followed_insights %}
             {% for insight in followed_insights %}
-              <p>
-                <span class="info-label">{{ insight.title }}</span><br>
-                {{ insight.date }}
-              </p>
+              <p><span class="info-label">{{ insight.title }}</span><br><small>{{ insight.date }}</small></p>
             {% endfor %}
-          </div>
-        {% else %}
-          <p style="color:#ddd;">You are not following any weekly insights yet.</p>
-        {% endif %}
+          {% else %}
+            <p style="opacity:0.55;font-size:0.88rem;">No saved news — heart stories in Weekly Insights.</p>
+          {% endif %}
+        </div>
       </div>
 
-      <script>
-        const fileInput = document.getElementById("profile-file");
-        const picBtn = document.getElementById("profile-pic-btn");
-        const form = document.getElementById("profile-upload-form");
+      <div class="profile-section">
+        <h3>saved events</h3>
+        <div class="music-info">
+          {% if followed_events %}
+            {% for event in followed_events %}
+              <p><span class="info-label">{{ event.title }}</span><br><small>{{ event.date }} · {{ event.location }}</small></p>
+            {% endfor %}
+          {% else %}
+            <p style="opacity:0.55;font-size:0.88rem;">No saved events — heart events in Weekly Insights.</p>
+          {% endif %}
+        </div>
+      </div>
+      <!-- ================================================================== -->
 
-        picBtn.addEventListener("click", () => fileInput.click());
+      <!-- ========== SPOTIFY CONNECTION ========== -->
+      <div class="spotify-card" id="spotify-card">
+        <h3>
+          <span class="spotify-logo" aria-hidden="true"></span>
+          Spotify
+        </h3>
 
-        fileInput.addEventListener("change", () => {
-          if (fileInput.files && fileInput.files.length > 0) {
-            form.submit();
-          }
-        });
-      </script>
+        <p class="spotify-status" id="spotify-status">Checking connection&hellip;</p>
+
+        <div class="spotify-actions" id="spotify-actions">
+          <!-- buttons get injected by JS based on connection state -->
+        </div>
+
+        <p class="muted">
+          Connecting Spotify lets Pulse pull your top artists so we can match
+          you with people who share your taste. We never post anything.
+        </p>
+      </div>
+
+      <div class="toast success" id="toast-success">Spotify connected.</div>
+      <div class="toast error"   id="toast-error">Something went wrong.</div>
+      <!-- ======================================== -->
 
       <p style="margin-top: 16px;">
         <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
@@ -86,11 +216,177 @@
     </section>
 
     <script>
-      (function () {
-        const params = new URLSearchParams(window.location.search);
-        const user = params.get('user');
-        if (user) document.getElementById('profile-name').textContent = user;
-      })();
+      // ---- Query param helpers (e.g. ?spotify=connected after callback) ----
+      const params = new URLSearchParams(window.location.search);
+      const userOverride = params.get('user');
+      if (userOverride) {
+        document.getElementById('profile-name').textContent = userOverride;
+      }
+
+      const successToast = document.getElementById('toast-success');
+      const errorToast = document.getElementById('toast-error');
+
+      function showToast(el, msg) {
+        if (msg) el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => { el.style.display = 'none'; }, 4000);
+      }
+
+      if (params.get('spotify') === 'connected') {
+        showToast(successToast, 'Spotify connected.');
+        // Clean the URL so a refresh doesn't re-show the toast
+        history.replaceState({}, '', window.location.pathname);
+      }
+
+      // ---- Render the Spotify card based on /spotify/status ----
+      const statusEl  = document.getElementById('spotify-status');
+      const actionsEl = document.getElementById('spotify-actions');
+
+      function renderConnected(data) {
+        const name = data.spotify_display_name || data.spotify_user_id || 'your account';
+        statusEl.innerHTML = 'Connected as <strong></strong>';
+        statusEl.querySelector('strong').textContent = name;
+
+        actionsEl.innerHTML = '';
+
+        const syncBtn = document.createElement('button');
+        syncBtn.className = 'btn-spotify';
+        syncBtn.type = 'button';
+        syncBtn.textContent = 'Sync top artists';
+        syncBtn.onclick = syncTopArtists;
+        actionsEl.appendChild(syncBtn);
+
+        const disconnectBtn = document.createElement('button');
+        disconnectBtn.className = 'btn-danger-ghost';
+        disconnectBtn.type = 'button';
+        disconnectBtn.textContent = 'Disconnect';
+        disconnectBtn.onclick = disconnectSpotify;
+        actionsEl.appendChild(disconnectBtn);
+      }
+
+      function renderDisconnected() {
+        statusEl.textContent = "You haven't connected Spotify yet.";
+        actionsEl.innerHTML = '';
+
+        const connectLink = document.createElement('a');
+        connectLink.className = 'btn-spotify';
+        connectLink.href = '/spotify/login';
+        connectLink.textContent = 'Connect Spotify';
+        actionsEl.appendChild(connectLink);
+      }
+
+      async function loadStatus() {
+        try {
+          const res = await fetch('/spotify/status', { credentials: 'same-origin' });
+          if (res.status === 401) {
+            statusEl.textContent = 'Log in to Pulse to connect Spotify.';
+            return;
+          }
+          const data = await res.json();
+          if (data.connected) {
+            renderConnected(data);
+          } else {
+            renderDisconnected();
+          }
+        } catch (err) {
+          statusEl.textContent = 'Could not check connection status.';
+          console.error(err);
+        }
+      }
+
+      async function syncTopArtists(ev) {
+        const btn = ev.currentTarget;
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Syncing…';
+        try {
+          const res = await fetch('/spotify/save-artists', { credentials: 'same-origin' });
+          const data = await res.json();
+          if (res.ok) {
+            showToast(successToast, `Synced ${data.count} artists.`);
+            renderMusicTaste({
+              topArtists: data.artists || [],
+              topGenres:  data.genres  || [],
+              topTracks:  data.tracks  || [],
+            });
+          } else {
+            showToast(errorToast, data.error || 'Sync failed.');
+          }
+        } catch (err) {
+          showToast(errorToast, 'Network error.');
+          console.error(err);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = original;
+        }
+      }
+
+      function renderMusicTaste(profile) {
+        const el = document.getElementById('music-taste-content');
+        const artists = (profile.topArtists || []).slice(0, 5);
+        const genres  = (profile.topGenres  || []).slice(0, 5);
+        const tracks  = (profile.topTracks  || []).slice(0, 3);
+
+        if (!artists.length && !genres.length) {
+          el.innerHTML = '<p style="opacity:0.55;font-size:0.88rem;">Connect Spotify below to populate your music taste.</p>';
+          return;
+        }
+
+        let html = '';
+        if (artists.length) {
+          html += '<p><span class="info-label">top artists:</span> ' + artists.join(', ') + '</p>';
+        }
+        if (genres.length) {
+          html += '<p><span class="info-label">top genres:</span> ' + genres.join(', ') + '</p>';
+        }
+        if (tracks.length) {
+          html += '<p><span class="info-label">top tracks:</span> ' + tracks.join(', ') + '</p>';
+        }
+        el.innerHTML = html;
+      }
+
+      async function loadMusicProfile() {
+        try {
+          const res = await fetch('/api/me/music-profile', { credentials: 'same-origin' });
+          if (!res.ok) return;
+          const data = await res.json();
+          renderMusicTaste(data.taste_profile || data.music_profile || {});
+        } catch (_) {}
+      }
+
+      loadMusicProfile();
+
+      // Auto-submit profile picture form when a file is chosen
+      document.getElementById('pfp-input').addEventListener('change', function () {
+        if (this.files && this.files.length > 0) {
+          document.getElementById('pfp-form').submit();
+        }
+      });
+
+      async function disconnectSpotify(ev) {
+        if (!confirm('Disconnect your Spotify account from Pulse?')) return;
+        const btn = ev.currentTarget;
+        btn.disabled = true;
+        try {
+          const res = await fetch('/spotify/disconnect', {
+            method: 'POST',
+            credentials: 'same-origin',
+          });
+          if (res.ok) {
+            showToast(successToast, 'Spotify disconnected.');
+            renderDisconnected();
+          } else {
+            showToast(errorToast, 'Could not disconnect.');
+          }
+        } catch (err) {
+          showToast(errorToast, 'Network error.');
+          console.error(err);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+
+      loadStatus();
     </script>
   </main>
 </body>

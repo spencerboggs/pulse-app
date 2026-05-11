@@ -13,7 +13,6 @@
       padding: 0 24px 60px;
     }
 
-    /* ── Two-column layout ── */
     .insights-layout {
       display: grid;
       grid-template-columns: 1fr 340px;
@@ -24,14 +23,11 @@
 
     @media (max-width: 860px) {
       .insights-layout { grid-template-columns: 1fr; }
-      .insights-sidebar { display: contents; }
     }
-
     @media (max-width: 500px) {
       .insights-page { padding: 0 12px 40px; }
     }
 
-    /* ── Sidebar sticky ── */
     .insights-sidebar {
       display: flex;
       flex-direction: column;
@@ -40,7 +36,6 @@
       top: 20px;
     }
 
-    /* ── News list ── */
     .news-list {
       list-style: none;
       padding: 0;
@@ -84,6 +79,7 @@
       flex-shrink: 0;
       transition: transform 0.15s;
       padding: 0;
+      color: inherit;
     }
     .heart-btn:hover { transform: scale(1.15); }
     .heart-btn.active { color: #ff5c8a; }
@@ -97,7 +93,6 @@
       border-top: 1px solid rgba(255,255,255,0.06);
     }
 
-    /* ── Activity feed ── */
     .activity-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 
     .activity-item {
@@ -138,11 +133,37 @@
     .activity-time { font-size: 0.74rem; opacity: 0.5; margin-top: 3px; }
     .activity-empty { font-size: 0.87rem; opacity: 0.6; padding: 6px 0; }
 
-    /* ── Photo upload ── */
+    .event-feed-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+
+    .event-feed-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 12px;
+      transition: border-color 0.18s;
+    }
+
+    .event-feed-item:hover { border-color: rgba(255,150,29,0.35); }
+
+    .event-feed-info { flex: 1; min-width: 0; }
+    .event-feed-genre {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.7px;
+      text-transform: uppercase;
+      color: var(--bg);
+      margin-bottom: 2px;
+    }
+    .event-feed-title { font-size: 0.85rem; font-weight: 700; margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .event-feed-meta { font-size: 0.74rem; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
     .upload-drop {
       border: 2px dashed rgba(255,255,255,0.15);
       border-radius: 14px;
-      padding: 20px;
+      padding: 16px;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s;
@@ -150,15 +171,11 @@
     }
     .upload-drop:hover, .upload-drop.drag-over { border-color: rgba(255,150,29,0.55); }
     .upload-drop input { display: none; }
-    .upload-icon { font-size: 1.8rem; margin-bottom: 4px; }
-    .upload-hint { font-size: 0.8rem; opacity: 0.55; }
-    .file-name { font-size: 0.8rem; opacity: 0.6; margin-top: 8px; min-height: 1em; }
+    .upload-icon { font-size: 1.6rem; margin-bottom: 2px; }
+    .upload-hint { font-size: 0.75rem; opacity: 0.5; }
+    .file-name { font-size: 0.78rem; opacity: 0.6; margin-top: 6px; min-height: 1em; }
 
-    .caption-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
+    .caption-row { display: flex; gap: 8px; margin-top: 10px; }
 
     .caption-input {
       flex: 1;
@@ -173,7 +190,6 @@
     }
     .caption-input::placeholder { opacity: 0.5; }
 
-    /* ── Photo grid ── */
     .photo-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -188,16 +204,20 @@
       border: 1px solid rgba(255,255,255,0.07);
     }
 
-    .photo-tile img {
-      width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
-      display: block;
-    }
-
+    .photo-tile img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
     .photo-tile-meta { padding: 7px 9px; }
     .photo-tile-caption { font-size: 0.78rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .photo-tile-sub { font-size: 0.7rem; opacity: 0.5; margin-top: 1px; }
+
+    .caption-post-item {
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+    .caption-post-text { font-size: 0.82rem; line-height: 1.4; }
+    .caption-post-sub { font-size: 0.7rem; opacity: 0.5; margin-top: 3px; }
 
     .section-label {
       font-size: 0.72rem;
@@ -223,26 +243,23 @@
       <section>
         <div class="card" style="padding-bottom:20px;">
           <h2 style="margin:0 0 4px;">Artist News</h2>
-          <p style="font-size:0.88rem;opacity:0.7;margin:0;">Heart a story to follow it.</p>
+          <p style="font-size:0.88rem;opacity:0.7;margin:0 0 4px;">Heart a story to save it to your profile.</p>
 
           <ul class="news-list">
             {% for insight in insights %}
-            <li class="news-item">
+            <li class="news-item" data-id="{{ insight.id }}">
               <div class="news-inner">
                 <div class="news-top">
                   <div>
                     <h3 class="news-title">{{ insight.title }}</h3>
                     <p class="news-summary">{{ insight.summary }}</p>
                   </div>
-                  <form method="POST"
-                    action="{{ url_for('toggle_favorite_insight', insight_id=insight.id) }}"
-                    style="margin:0;">
-                    <button type="submit"
-                      class="heart-btn {% if insight.is_favorited %}active{% endif %}"
-                      title="{% if insight.is_favorited %}Unfollow{% else %}Follow{% endif %}">
-                      {% if insight.is_favorited %}♥{% else %}♡{% endif %}
-                    </button>
-                  </form>
+                  <button type="button"
+                    class="heart-btn {% if insight.is_favorited %}active{% endif %}"
+                    data-insight-id="{{ insight.id }}"
+                    title="{% if insight.is_favorited %}Unsave{% else %}Save{% endif %}">
+                    {% if insight.is_favorited %}♥{% else %}♡{% endif %}
+                  </button>
                 </div>
               </div>
               <div class="news-footer">
@@ -269,27 +286,36 @@
           </div>
         </div>
 
-        <!-- Events Feed -->
+        <!-- Upcoming Events (heartable) -->
         <div class="card">
-          <div class="section-label">Events Feed</div>
-          <h3 style="margin:0 0 2px;font-size:1rem;">Share event photos</h3>
+          <div class="section-label">Upcoming Events</div>
+          <h3 style="margin:0 0 2px;font-size:1rem;">Save events to your profile</h3>
+          <div class="event-feed-list" id="eventFeedList">
+            <p class="activity-empty">Loading…</p>
+          </div>
+        </div>
+
+        <!-- Share a moment (photo optional) -->
+        <div class="card">
+          <div class="section-label">Share a Moment</div>
+          <h3 style="margin:0 0 2px;font-size:1rem;">Post to your friends' feeds</h3>
 
           <label class="upload-drop" id="uploadDrop">
             <input type="file" id="photoInput" accept="image/*">
             <div class="upload-icon">📷</div>
-            <div style="font-weight:600;font-size:0.88rem;">Choose a photo</div>
+            <div style="font-weight:600;font-size:0.85rem;">Add a photo <span style="font-weight:400;opacity:0.6;">(optional)</span></div>
             <div class="upload-hint">JPG · PNG · GIF · WEBP</div>
           </label>
           <div class="file-name" id="fileName"></div>
 
           <div class="caption-row">
-            <input class="caption-input" id="captionInput" type="text" placeholder="Caption (optional)…">
+            <input class="caption-input" id="captionInput" type="text" placeholder="What's happening?">
             <button class="btn btn-primary" id="postBtn">Post</button>
           </div>
 
-          <div class="photo-grid" id="photoGrid"></div>
+          <div id="photoFeed"></div>
           <p id="photosEmpty" style="font-size:0.85rem;opacity:0.6;margin-top:10px;" hidden>
-            No photos yet — be the first to share!
+            No posts from friends yet.
           </p>
         </div>
 
@@ -307,35 +333,86 @@
       var p = (name || "").trim().split(/\s+/).filter(Boolean);
       return ((p[0] || "?")[0] + ((p[1] || "")[0] || "")).toUpperCase();
     }
+    function esc(s) {
+      return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+
+    // ── Insight heart buttons ────────────────────────────────
+    document.querySelectorAll(".heart-btn[data-insight-id]").forEach(function (btn) {
+      btn.addEventListener("click", async function () {
+        var id = btn.dataset.insightId;
+        try {
+          var res = await fetch("/api/insights/favorite/" + id, { method: "POST" });
+          var data = await res.json();
+          if (data.favorited) {
+            btn.textContent = "♥";
+            btn.classList.add("active");
+            btn.title = "Unsave";
+          } else {
+            btn.textContent = "♡";
+            btn.classList.remove("active");
+            btn.title = "Save";
+          }
+        } catch (_) {}
+      });
+    });
 
     // ── Friends activity ─────────────────────────────────────
     var activityList = document.getElementById("activityList");
 
+    function activityAvatar(a) {
+      var inits = initials(a.username);
+      if (a.pfp_url) {
+        return '<div class="activity-avatar" style="padding:0;overflow:hidden;">' +
+          '<img src="' + esc(a.pfp_url) + '" alt="' + inits + '" ' +
+          'style="width:100%;height:100%;object-fit:cover;" ' +
+          'onerror="this.parentElement.style.padding=\'\';this.parentElement.textContent=\'' + inits + '\'">' +
+          '</div>';
+      }
+      return '<div class="activity-avatar">' + inits + '</div>';
+    }
+
     function renderActivity(items) {
       activityList.innerHTML = "";
       if (!items || !items.length) {
-        activityList.innerHTML = '<p class="activity-empty">No activity yet — add friends to see what they\'re up to.</p>';
+        activityList.innerHTML = '<p class="activity-empty">No activity yet — add friends to see what they\'re into.</p>';
         return;
       }
       items.forEach(function (a) {
         var el = document.createElement("div");
         el.className = "activity-item";
-
-        if (a.type === "posted_photo") {
+        if (a.type === "posted_photo" && a.photo_url) {
           el.innerHTML =
-            '<img class="activity-photo-thumb" src="' + a.photo_url + '" alt="photo">' +
+            activityAvatar(a) +
             '<div class="activity-text">' +
-              '<span class="activity-user">@' + a.username + '</span> posted a photo' +
-              (a.caption ? ': <span class="activity-title">' + a.caption + '</span>' : '') +
-              '<div class="activity-time">' + (a.time || "") + '</div>' +
+              '<span class="activity-user">@' + esc(a.username) + '</span> shared a photo' +
+              (a.caption ? ': <span class="activity-title">' + esc(a.caption) + '</span>' : '') +
+              '<div class="activity-time">' + esc(a.time || "") + '</div>' +
+            '</div>' +
+            '<img class="activity-photo-thumb" src="' + esc(a.photo_url) + '" alt="photo">';
+        } else if (a.type === "posted_photo") {
+          el.innerHTML =
+            activityAvatar(a) +
+            '<div class="activity-text">' +
+              '<span class="activity-user">@' + esc(a.username) + '</span> shared: ' +
+              '<span class="activity-title">' + esc(a.caption || "a moment") + '</span>' +
+              '<div class="activity-time">' + esc(a.time || "") + '</div>' +
+            '</div>';
+        } else if (a.type === "liked_event") {
+          el.innerHTML =
+            activityAvatar(a) +
+            '<div class="activity-text">' +
+              '<span class="activity-user">@' + esc(a.username) + '</span> saved: ' +
+              '<span class="activity-title">' + esc(a.title) + '</span>' +
+              '<div class="activity-time">' + esc(a.time || "") + '</div>' +
             '</div>';
         } else {
           el.innerHTML =
-            '<div class="activity-avatar">' + initials(a.username) + '</div>' +
+            activityAvatar(a) +
             '<div class="activity-text">' +
-              '<span class="activity-user">@' + a.username + '</span> liked ' +
-              '<span class="activity-title">' + a.title + '</span>' +
-              '<div class="activity-time">' + (a.time || "") + '</div>' +
+              '<span class="activity-user">@' + esc(a.username) + '</span> liked: ' +
+              '<span class="activity-title">' + esc(a.title) + '</span>' +
+              '<div class="activity-time">' + esc(a.time || "") + '</div>' +
             '</div>';
         }
         activityList.appendChild(el);
@@ -347,20 +424,70 @@
       .then(function (d) { renderActivity(d.activity || []); })
       .catch(function () { activityList.innerHTML = '<p class="activity-empty">Could not load activity.</p>'; });
 
-    // ── Photo feed ───────────────────────────────────────────
-    var photoInput  = document.getElementById("photoInput");
-    var fileName    = document.getElementById("fileName");
+    // ── Events feed ──────────────────────────────────────────
+    var eventFeedList = document.getElementById("eventFeedList");
+
+    function renderEvents(events) {
+      eventFeedList.innerHTML = "";
+      if (!events || !events.length) {
+        eventFeedList.innerHTML = '<p class="activity-empty">No events available.</p>';
+        return;
+      }
+      events.forEach(function (ev) {
+        var el = document.createElement("div");
+        el.className = "event-feed-item";
+        el.innerHTML =
+          '<div class="event-feed-info">' +
+            '<div class="event-feed-genre">' + esc(ev.genre) + '</div>' +
+            '<div class="event-feed-title">' + esc(ev.title) + '</div>' +
+            '<div class="event-feed-meta">' + esc(ev.date) + ' · ' + esc(ev.location) + '</div>' +
+          '</div>' +
+          '<button class="heart-btn' + (ev.is_favorited ? ' active' : '') + '" ' +
+            'data-event-id="' + esc(ev.id) + '" ' +
+            'title="' + (ev.is_favorited ? 'Unsave' : 'Save') + '">' +
+            (ev.is_favorited ? '♥' : '♡') +
+          '</button>';
+        eventFeedList.appendChild(el);
+      });
+
+      eventFeedList.querySelectorAll(".heart-btn[data-event-id]").forEach(function (btn) {
+        btn.addEventListener("click", async function () {
+          var id = btn.dataset.eventId;
+          try {
+            var res = await fetch("/api/events-feed/favorite/" + id, { method: "POST" });
+            var data = await res.json();
+            if (data.favorited) {
+              btn.textContent = "♥";
+              btn.classList.add("active");
+              btn.title = "Unsave";
+            } else {
+              btn.textContent = "♡";
+              btn.classList.remove("active");
+              btn.title = "Save";
+            }
+          } catch (_) {}
+        });
+      });
+    }
+
+    fetch("/api/events-feed")
+      .then(function (r) { return r.json(); })
+      .then(function (d) { renderEvents(d.events || []); })
+      .catch(function () { eventFeedList.innerHTML = '<p class="activity-empty">Could not load events.</p>'; });
+
+    // ── Share a moment ───────────────────────────────────────
+    var photoInput   = document.getElementById("photoInput");
+    var fileName     = document.getElementById("fileName");
     var captionInput = document.getElementById("captionInput");
-    var postBtn     = document.getElementById("postBtn");
-    var photoGrid   = document.getElementById("photoGrid");
-    var photosEmpty = document.getElementById("photosEmpty");
+    var postBtn      = document.getElementById("postBtn");
+    var photoFeed    = document.getElementById("photoFeed");
+    var photosEmpty  = document.getElementById("photosEmpty");
+    var uploadDrop   = document.getElementById("uploadDrop");
 
     photoInput.addEventListener("change", function () {
       fileName.textContent = photoInput.files[0] ? photoInput.files[0].name : "";
     });
 
-    // drag-and-drop visual
-    var uploadDrop = document.getElementById("uploadDrop");
     uploadDrop.addEventListener("dragover",  function (e) { e.preventDefault(); uploadDrop.classList.add("drag-over"); });
     uploadDrop.addEventListener("dragleave", function ()  { uploadDrop.classList.remove("drag-over"); });
     uploadDrop.addEventListener("drop", function (e) {
@@ -372,50 +499,69 @@
       }
     });
 
-    function renderPhotos(photos) {
-      photoGrid.innerHTML = "";
+    function renderPhotoFeed(photos) {
+      photoFeed.innerHTML = "";
       if (!photos || !photos.length) { photosEmpty.hidden = false; return; }
       photosEmpty.hidden = true;
+
+      var grid = null;
       photos.forEach(function (p) {
-        var tile = document.createElement("div");
-        tile.className = "photo-tile";
-        tile.innerHTML =
-          '<img src="' + p.url + '" alt="' + (p.caption || "event photo") + '" loading="lazy">' +
-          '<div class="photo-tile-meta">' +
-            '<div class="photo-tile-caption">' + (p.caption || "No caption") + '</div>' +
-            '<div class="photo-tile-sub">@' + p.username + ' · ' + p.time + '</div>' +
-          '</div>';
-        photoGrid.appendChild(tile);
+        if (p.url) {
+          if (!grid) {
+            grid = document.createElement("div");
+            grid.className = "photo-grid";
+            photoFeed.appendChild(grid);
+          }
+          var tile = document.createElement("div");
+          tile.className = "photo-tile";
+          tile.innerHTML =
+            '<img src="' + esc(p.url) + '" alt="' + esc(p.caption || "photo") + '" loading="lazy">' +
+            '<div class="photo-tile-meta">' +
+              '<div class="photo-tile-caption">' + esc(p.caption || "No caption") + '</div>' +
+              '<div class="photo-tile-sub">@' + esc(p.username) + ' · ' + esc(p.time) + '</div>' +
+            '</div>';
+          grid.appendChild(tile);
+        } else {
+          var item = document.createElement("div");
+          item.className = "caption-post-item";
+          item.innerHTML =
+            '<div class="caption-post-text">' + esc(p.caption) + '</div>' +
+            '<div class="caption-post-sub">@' + esc(p.username) + ' · ' + esc(p.time) + '</div>';
+          photoFeed.appendChild(item);
+        }
       });
     }
 
     fetch("/api/event-photos")
       .then(function (r) { return r.json(); })
-      .then(function (d) { renderPhotos(d.photos || []); })
+      .then(function (d) { renderPhotoFeed(d.photos || []); })
       .catch(function () { photosEmpty.hidden = false; });
 
     postBtn.addEventListener("click", async function () {
-      var file = photoInput.files[0];
-      if (!file) { alert("Choose a photo first."); return; }
+      var file    = photoInput.files[0];
+      var caption = captionInput.value.trim();
+      if (!file && !caption) { alert("Add a photo or write something first."); return; }
+
       var form = new FormData();
-      form.append("photo", file);
-      form.append("caption", captionInput.value.trim());
+      if (file) form.append("photo", file);
+      form.append("caption", caption);
+
       postBtn.textContent = "Posting…";
       postBtn.disabled = true;
       try {
         var res  = await fetch("/api/event-photos", { method: "POST", body: form });
         var data = await res.json();
-        if (data.url) {
-          photoInput.value = "";
+        if (!data.error) {
+          photoInput.value   = "";
           captionInput.value = "";
           fileName.textContent = "";
           var r2 = await fetch("/api/event-photos");
           var d2 = await r2.json();
-          renderPhotos(d2.photos || []);
+          renderPhotoFeed(d2.photos || []);
         } else {
-          alert(data.error || "Upload failed.");
+          alert(data.error || "Post failed.");
         }
-      } catch (_) { alert("Upload failed."); }
+      } catch (_) { alert("Post failed."); }
       finally { postBtn.textContent = "Post"; postBtn.disabled = false; }
     });
   })();

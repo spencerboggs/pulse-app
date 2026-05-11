@@ -38,6 +38,46 @@
     .req-btn  { min-width: 80px; }
     .add-btn[disabled] { opacity: 0.6; cursor: not-allowed; }
 
+    .genre-filter-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 0 2px;
+      flex-wrap: wrap;
+    }
+    .genre-filter-row label {
+      margin: 0;
+      color: rgba(255, 246, 215, 0.86);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .genre-select {
+      min-width: 180px;
+      max-width: 100%;
+      padding: 10px 38px 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 150, 29, 0.55);
+      background-color: rgba(11, 29, 58, 0.85);
+      color: var(--fg);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .genre-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 246, 215, 0.12);
+    }
+    .genre-select option {
+      background-color: #17233a;
+      color: #fff;
+    }
+    .suggested-count {
+      margin-left: auto;
+      color: rgba(255, 246, 215, 0.7);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
     /* invite box */
     .invite-box {
       display: flex;
@@ -66,6 +106,17 @@
 
     @media (max-width: 600px) {
       .matchmaking-page { padding: 0 12px 32px; }
+      .genre-filter-row {
+        align-items: stretch;
+      }
+      .genre-filter-row label,
+      .genre-select,
+      .suggested-count {
+        width: 100%;
+      }
+      .suggested-count {
+        margin-left: 0;
+      }
     }
   </style>
 </head>
@@ -111,6 +162,13 @@
     <!-- SUGGESTED -->
     <section class="card">
       <h2>Suggested Accounts</h2>
+      <div class="genre-filter-row">
+        <label for="genre-filter">Filter by genre</label>
+        <select id="genre-filter" class="genre-select">
+          <option value="">All genres</option>
+        </select>
+        <span id="suggested-count" class="suggested-count"></span>
+      </div>
       <section id="suggested-list" class="matchmaker-feed" aria-label="Suggested Accounts">
         <p id="suggested-loading" class="empty-state">Loading suggestions...</p>
       </section>
@@ -134,6 +192,14 @@
       return ((p[0]||"U")[0] + ((p[1]||"")[0]||"")).toUpperCase();
     }
     function getEl(id) { return document.getElementById(id); }
+
+    function avatarHtml(u) {
+      const inits = esc(u.initials || initials(u.name || u.username || 'U'));
+      if (u.pfp_url) {
+        return '<div class="user-avatar"><img src="' + esc(u.pfp_url) + '" alt="' + inits + '" onerror="this.parentElement.innerHTML='' + inits + ''" style="width:100%;height:100%;object-fit:cover;border-radius:999px;"></div>';
+      }
+      return '<div class="user-avatar">' + inits + '</div>';
+    }
 
     // ── Invite link ──────────────────────────────────────────
     const INVITE_URL = "http://localhost:5000";
@@ -159,7 +225,6 @@
       const name = esc(u.name || u.username || "User");
       const handle = esc(u.handle || "@" + u.username);
       const id = esc(String(u.id));
-      const inits = esc(u.initials || initials(u.name || u.username || "U"));
 
       const el = document.createElement("article");
       el.className = "user-card request-card";
@@ -167,7 +232,7 @@
       el.innerHTML = `
         <div class="user-header"><div class="user-title">Sent you a friend request</div></div>
         <div class="user-main">
-          <div class="user-avatar">${inits}</div>
+          ${avatarHtml(u)}
           <div class="user-meta">
             <div class="user-name">${name}</div>
             <div class="user-handle">${handle}</div>
@@ -193,14 +258,63 @@
     // ── Suggested users ──────────────────────────────────────
     const suggestedList = getEl("suggested-list");
     const suggestedLoading = getEl("suggested-loading");
+    const genreFilter = getEl("genre-filter");
+    const suggestedCount = getEl("suggested-count");
+    let suggestedUsers = [];
+
+    function normalizeGenre(g) {
+      return String(g || "").trim();
+    }
+
+    function genresForUser(u) {
+      return (u.genres || u.topGenres || [])
+        .map(normalizeGenre)
+        .filter(Boolean);
+    }
+
+    function updateGenreOptions(users) {
+      const current = genreFilter.value;
+      const genres = Array.from(new Set(users.flatMap(genresForUser)))
+        .sort(function (a, b) { return a.localeCompare(b); });
+      genreFilter.innerHTML = '<option value="">All genres</option>';
+      genres.forEach(function (genre) {
+        const option = document.createElement("option");
+        option.value = genre;
+        option.textContent = genre;
+        genreFilter.appendChild(option);
+      });
+      if (genres.includes(current)) genreFilter.value = current;
+    }
+
+    function renderSuggestedList(users) {
+      const selectedGenre = genreFilter.value;
+      const visible = selectedGenre
+        ? users.filter(function (u) { return genresForUser(u).includes(selectedGenre); })
+        : users;
+
+      suggestedList.querySelectorAll(".suggested-card, .suggested-empty").forEach(function (n) { n.remove(); });
+      suggestedCount.textContent = `${visible.length} ${visible.length === 1 ? "match" : "matches"}`;
+
+      if (!visible.length) {
+        const message = selectedGenre
+          ? `No suggested accounts for ${selectedGenre}.`
+          : "No suggestions right now.";
+        suggestedList.insertAdjacentHTML("beforeend", `<p class="empty-state suggested-empty">${esc(message)}</p>`);
+        return;
+      }
+
+      visible.forEach(renderSuggested);
+    }
 
     function renderSuggested(u) {
       const name = esc(u.name || u.username || "User");
       const handle = esc(u.handle || "@" + u.username);
       const id = esc(String(u.id));
-      const inits = esc(u.initials || initials(u.name || u.username || "U"));
       const btnLabel = u.requested ? "Requested" : "Add Friend";
       const btnDisabled = u.requested ? "disabled" : "";
+      const genreTags = genresForUser(u).slice(0, 3).map(function (genre) {
+        return `<span class="pill">${esc(genre)}</span>`;
+      }).join("");
 
       const el = document.createElement("article");
       el.className = "user-card suggested-card";
@@ -210,11 +324,12 @@
       el.innerHTML = `
         <div class="user-header"><div class="user-title">Suggested for you</div></div>
         <div class="user-main">
-          <div class="user-avatar">${inits}</div>
+          ${avatarHtml(u)}
           <div class="user-meta">
             <div class="user-name">${name}</div>
             <div class="user-handle">${handle}</div>
             ${matchLine}
+            ${genreTags ? `<div class="user-tags">${genreTags}</div>` : ""}
           </div>
           <div class="user-actions">
             <button class="btn btn-ghost add-btn" data-action="add-friend" ${btnDisabled}>${btnLabel}</button>
@@ -230,7 +345,9 @@
       const cached = window.PulseSimilarityCache && uid ? PulseSimilarityCache.read(uid) : null;
       if (cached && cached.length) {
         if (suggestedLoading && suggestedLoading.parentNode) suggestedLoading.remove();
-        cached.forEach(renderSuggested);
+        suggestedUsers = cached;
+        updateGenreOptions(suggestedUsers);
+        renderSuggestedList(suggestedUsers);
         showedCache = true;
       }
       try {
@@ -240,14 +357,15 @@
         if (window.PulseSimilarityCache && uid && data.users && data.users.length) {
           PulseSimilarityCache.write(uid, data.users);
         }
-        suggestedList.querySelectorAll(".suggested-card").forEach(function (n) { n.remove(); });
+        suggestedUsers = data.users || [];
+        updateGenreOptions(suggestedUsers);
         if (!data.users || !data.users.length) {
           if (!showedCache) {
-            suggestedList.insertAdjacentHTML("beforeend", '<p class="empty-state">No suggestions right now.</p>');
+            renderSuggestedList([]);
           }
           return;
         }
-        data.users.forEach(renderSuggested);
+        renderSuggestedList(suggestedUsers);
       } catch (_) {
         if (suggestedLoading && suggestedLoading.parentNode) {
           suggestedLoading.textContent = "Could not load suggestions.";
@@ -257,6 +375,9 @@
       }
     }
     loadSuggested();
+    genreFilter.addEventListener("change", function () {
+      renderSuggestedList(suggestedUsers);
+    });
 
     // ── Search ───────────────────────────────────────────────
     const searchInput = getEl("friendSearch");
@@ -267,22 +388,23 @@
       const name = esc(u.name || u.username || "User");
       const handle = esc(u.handle || "@" + (u.username||""));
       const id = esc(String(u.id));
-      const inits = esc(u.initials || initials(u.name || u.username || "U"));
-      searchResults.insertAdjacentHTML("beforeend", `
-        <article class="user-card search-card" data-userid="${id}">
-          <div class="user-header"><div class="user-title">Search result</div></div>
-          <div class="user-main">
-            <div class="user-avatar">${inits}</div>
-            <div class="user-meta">
-              <div class="user-name">${name}</div>
-              <div class="user-handle">${handle}</div>
-            </div>
-            <div class="user-actions">
-              <button class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
-              <a class="btn btn-primary" href="/u/${encodeURIComponent(u.username||u.name)}">View</a>
-            </div>
+      const article = document.createElement("article");
+      article.className = "user-card search-card";
+      article.dataset.userid = id;
+      article.innerHTML = `
+        <div class="user-header"><div class="user-title">Search result</div></div>
+        <div class="user-main">
+          ${avatarHtml(u)}
+          <div class="user-meta">
+            <div class="user-name">${name}</div>
+            <div class="user-handle">${handle}</div>
           </div>
-        </article>`);
+          <div class="user-actions">
+            <button class="btn btn-ghost add-btn" data-action="add-friend">Add Friend</button>
+            <a class="btn btn-primary" href="/u/${encodeURIComponent(u.username||u.name)}">View</a>
+          </div>
+        </div>`;
+      searchResults.appendChild(article);
     }
 
     let timer = null;

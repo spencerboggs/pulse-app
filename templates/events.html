@@ -1,287 +1,66 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pulse — Events</title>
+  <title>Pulse - Events</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <style>
-    .events-page {
-      max-width: 1200px;
-      margin: 10vh auto 0;
-      padding: 0 24px 60px;
-    }
-
-    .events-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-top: 20px;
-    }
-
-    @media (max-width: 960px) {
-      .events-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 580px) {
-      .events-grid { grid-template-columns: 1fr; }
-      .events-page { padding: 0 14px 40px; }
-    }
-
-    .event-card {
-      display: flex;
-      flex-direction: column;
-      background: rgba(11, 29, 58, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 18px;
-      overflow: hidden;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    }
-
-    .event-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
-      border-color: rgba(255, 150, 29, 0.4);
-    }
-
-    .event-thumb {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      object-fit: cover;
-      display: block;
-    }
-
-    .event-body {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      gap: 8px;
-    }
-
-    .event-genre {
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: var(--bg);
-      opacity: 0.9;
-    }
-
-    .event-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--fg);
-      margin: 0;
-      line-height: 1.3;
-    }
-
-    .event-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      font-size: 0.82rem;
-      color: var(--muted);
-      opacity: 0.75;
-    }
-
-    .event-meta span { display: flex; align-items: center; gap: 6px; }
-    .event-meta span::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--bg);
-      flex-shrink: 0;
-    }
-
-    .event-desc {
-      font-size: 0.83rem;
-      color: var(--muted);
-      opacity: 0.8;
-      line-height: 1.5;
-      margin: 0;
-      flex: 1;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .event-card .btn {
-      margin-top: 6px;
-      width: 100%;
-    }
-
-    /* ── Modal ── */
-    #event-modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      z-index: 9999;
-      backdrop-filter: blur(4px);
-    }
-
-    .modal-card {
-      background: rgba(11, 29, 58, 0.97);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      max-width: 560px;
-      width: 100%;
-      overflow: hidden;
-      position: relative;
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
-    }
-
-    .modal-card img {
-      width: 100%;
-      height: 220px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .modal-body { padding: 20px 24px 24px; }
-
-    .modal-genre {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: var(--bg);
-      margin-bottom: 6px;
-    }
-
-    .modal-title { font-size: 1.3rem; font-weight: 700; margin: 0 0 8px; }
-    .modal-meta  { font-size: 0.85rem; opacity: 0.7; margin: 0 0 12px; }
-    .modal-desc  { font-size: 0.9rem; line-height: 1.6; opacity: 0.88; margin: 0 0 18px; }
-
-    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
-    .modal-close {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      background: rgba(0,0,0,0.45);
-      border: none;
-      color: #fff;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .modal-close:hover { background: rgba(0,0,0,0.7); }
-  </style>
 </head>
 
-<!-- Events lists curated cards and opens detail content from the API or from assistant deep links. -->
 <body>
-  <main class="events-page">
+  <main class="container">
     <header class="brand">
-      <div class="logo">Pulse</div>
-      <p class="subtitle">Upcoming Events</p>
+      <div class="logo">pulse</div>
+      <p class="subtitle">Events</p>
     </header>
-
-    <div class="events-grid">
-      {% for event_id, e in events.items() %}
-      <div class="event-card">
-        <img class="event-thumb"
-             src="{{ url_for('static', filename=e.image) }}"
-             alt="{{ e.title }}"
-             onerror="this.onerror=null;this.src='/static/images/event_placeholder.png'">
-        <div class="event-body">
-          <div class="event-genre">{{ e.genre }}</div>
-          <h3 class="event-title">{{ e.title }}</h3>
-          <div class="event-meta">
-            <span>{{ e.date }}</span>
-            <span>{{ e.location }}</span>
+    <section class="card">
+      <h2>Explore Events and Concerts</h2>
+      <!-- Concert Map Button -->
+      <a class="btn btn-primary w-full" href="{{ url_for('concert_map') }}">Concert Map</a>
+      <div class="list" style="margin-top: 8px;">
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <div class="event-card">
+          <img src="{{ url_for('static', filename='images/placeholder_caser.png') }}" alt="Event 1" class="event-pic">
+          <h3>Daniel Ceasar Concert</h3>
+          <div class="event-date-location">
+            <p>Date: 11/23/2025</p>
+            <p>Location: So-Fi Stadium</p>
           </div>
-          <p class="event-desc">{{ e.description }}</p>
-          <button class="btn btn-primary" onclick="openModal('{{ event_id }}')">View Details</button>
+          <p class="event-description">Come experience Daniel Ceasar's newest album LIVE at SoFi Stadium</p>
+          <button class="btn btn-primary w-full"
+            onclick="openModal('Daniel Ceasar Concert', 'So-Fi Stadium', '11/23/2025')">
+            View Details
+          </button>
         </div>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <div class="event-card">
+          <img src="{{ url_for('static', filename='images/placeholder_flawed.jpg') }}" alt="Event 2" class="event-pic">
+          <h3>Flawed Mangoes Debut Show</h3>
+          <div class="event-date-location">
+            <p>Date: 9/28/2025</p>
+            <p>Location: EchoPlex</p>
+          </div>
+          <p class="event-description">Up and comer artist Flawed Mangoes has his first live show at Echo Plex</p>
+          <a class="btn btn-primary w-full">View Details</a>
+        </div>
+        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+        <div class="event-card">
+          <img src="{{ url_for('static', filename='images/placeholder_benson.jpg') }}" alt="Event 3" class="event-pic">
+          <h3>Benson Boone World Tour</h3>
+          <div class="event-date-location">
+            <p>Date: 12/25/2025</p>
+            <p>Location: Youtube Stadium</p>
+          </div>
+          <p class="event-description">Benson Boone makes his long awaited return to LA for his world tour. </p>
+          <a class="btn btn-primary w-full">View Details</a>
+        </div>
+        <!-- ================================================================== -->
       </div>
-      {% endfor %}
-    </div>
-
-    <p style="margin-top:28px;">
-      <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
-    </p>
+      <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
+    </section>
   </main>
-
-  <!-- Modal -->
-  <div id="event-modal-overlay">
-    <div class="modal-card">
-      <button class="modal-close" onclick="closeModal()">✕</button>
-      <img id="modal-img" src="" alt="">
-      <div class="modal-body">
-        <div class="modal-genre" id="modal-genre"></div>
-        <h2 class="modal-title" id="modal-title"></h2>
-        <p class="modal-meta"  id="modal-meta"></p>
-        <p class="modal-desc"  id="modal-desc"></p>
-        <div class="modal-actions">
-          <a id="modal-tickets"   class="btn btn-primary" href="#" target="_blank" rel="noopener">Get Tickets</a>
-          <a id="modal-instagram" class="btn btn-ghost"   href="#" target="_blank" rel="noopener">Instagram</a>
-          <a id="modal-spotify"   class="btn btn-ghost"   href="#" target="_blank" rel="noopener">Spotify</a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const overlay = document.getElementById("event-modal-overlay");
-
-    function closeModal() { overlay.style.display = "none"; }
-    overlay.addEventListener("click", e => { if (e.target === overlay) closeModal(); });
-    document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
-
-    async function openModal(eventId) {
-      overlay.style.display = "flex";
-      document.getElementById("modal-title").textContent = "Loading…";
-      document.getElementById("modal-meta").textContent = "";
-      document.getElementById("modal-desc").textContent = "";
-      document.getElementById("modal-genre").textContent = "";
-      document.getElementById("modal-img").src = "";
-
-      try {
-        const res  = await fetch(`/api/events/${eventId}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed");
-
-        document.getElementById("modal-img").src       = data.image_url;
-        document.getElementById("modal-genre").textContent = data.genre || "";
-        document.getElementById("modal-title").textContent = data.title;
-        document.getElementById("modal-meta").textContent  = `${data.date} · ${data.location}`;
-        document.getElementById("modal-desc").textContent  = data.description;
-
-        const setLink = (id, href) => {
-          const el = document.getElementById(id);
-          el.href = href || "#";
-          el.style.opacity = href ? "1" : "0.45";
-          el.style.pointerEvents = href ? "auto" : "none";
-        };
-        setLink("modal-tickets",   data.ticket_url);
-        setLink("modal-instagram", data.socials && data.socials.instagram);
-        setLink("modal-spotify",   data.socials && data.socials.spotify);
-      } catch (err) {
-        document.getElementById("modal-title").textContent = "Couldn't load event";
-        document.getElementById("modal-desc").textContent  = err.message;
-      }
-    }
-
-    (function () {
-      const params = new URLSearchParams(window.location.search);
-      const openId = params.get("open");
-      if (openId) openModal(openId);
-    })();
-  </script>
 </body>
+
 </html>
