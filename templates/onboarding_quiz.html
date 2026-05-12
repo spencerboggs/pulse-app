@@ -238,13 +238,15 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          alert(data.error || ('Could not save quiz (HTTP ' + res.status + ').'));
+          // alert(data.error || ('Could not save quiz (HTTP ' + res.status + ').'));
           submitBtn.disabled = false;
+          window.location.href = "{{ url_for('home') }}";
           return;
         }
         window.location.href = "{{ url_for('home') }}";
       } catch (err) {
-        alert('Network error saving quiz.');
+        window.location.href = "{{ url_for('home') }}";
+        // alert('Network error saving quiz.');
         submitBtn.disabled = false;
       }
     });
