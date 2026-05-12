@@ -973,6 +973,36 @@ def create_app() -> Flask:
         event_out["image_url"] = url_for("static", filename=event["image"])
         return jsonify(event_out)
 
+    @app.route("/api/users/<username>/profile-data")
+    def api_user_profile_data(username):
+        res = supabase.table("users").select("id, username, first_name, last_name").eq("username", username).limit(1).execute()
+        if not res.data:
+            return jsonify({"error": "User not found"}), 404
+        user = res.data[0]
+        user_id = str(user["id"])
+
+        stats = fetch_user_statistics(user_id)
+        spotify_blob = (stats or {}).get("spotify") or {}
+        taste = taste_profile_from_row(stats)
+
+        artists_res = supabase.table("user_top_artists").select("name, image").eq("user_id", user_id).limit(20).execute()
+        top_artists = artists_res.data or []
+
+        insights_res = supabase.table("followed_insights").select("item_id, title, badges").eq("user_id", user_id).execute()
+        followed_insights = insights_res.data or []
+
+        top_tracks = spotify_blob.get("topTracks") or taste.get("topTracks") or []
+        top_genres = taste.get("topGenres") or spotify_blob.get("topGenres") or []
+        has_spotify = bool(top_artists or spotify_blob.get("topArtists"))
+
+        return jsonify({
+            "has_spotify": has_spotify,
+            "top_artists": top_artists,
+            "top_tracks": top_tracks[:10],
+            "top_genres": top_genres[:8],
+            "followed_insights": followed_insights,
+        })
+
     @app.route("/concert-map")
     def concert_map():
         return render_template("concert_map.html")
@@ -1031,13 +1061,22 @@ def create_app() -> Flask:
             except Exception:
                 pass
 
-        # Fallback: use app's static events (geocode approximated)
-        static_fallback = [
-            {"name": e["title"], "date": e["date"], "time": "", "venue": e["location"],
-             "city": "Los Angeles", "lat": 34.0195 + i * 0.03, "lng": -118.4912 + i * 0.02,
-             "url": e.get("ticket_url", "#"), "image": None}
-            for i, e in enumerate(EVENTS.values())
-        ]
+        # Fallback: use app's static events with real venue coordinates
+        venue_coords = {
+            "SoFi Stadium":                       (33.9535, -118.3391),
+            "EchoPlex":                           (34.0759, -118.2598),
+            "Kia Forum":                          (33.9581, -118.3418),
+            "Los Angeles State Historic Park":    (34.0633, -118.2233),
+        }
+        static_fallback = []
+        for e in EVENTS.values():
+            coords = venue_coords.get(e["location"], (34.0522, -118.2437))
+            static_fallback.append({
+                "name": e["title"], "date": e["date"], "time": "",
+                "venue": e["location"], "city": "Los Angeles",
+                "lat": coords[0], "lng": coords[1],
+                "url": e.get("ticket_url", "#"), "image": None,
+            })
         return jsonify({"events": static_fallback, "source": "static"})
 
     # Settings reads and writes preferences through user_settings while mirroring toggles in the browser for responsiveness.

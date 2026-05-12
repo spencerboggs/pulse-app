@@ -296,8 +296,7 @@
         .then(function (r) { return r.json(); })
         .then(function (data) {
           var events = data.events || [];
-          var src = data.source === "static" ? " (showing sample events — add TICKETMASTER_KEY for live data)" : "";
-          setStatus(events.length + " concert" + (events.length === 1 ? "" : "s") + " found within " + radius + " miles." + src);
+          setStatus(events.length + " concert" + (events.length === 1 ? "" : "s") + " found within " + radius + " miles.");
           placeMarkers(events);
           renderList(events);
           if (events.length) {
