@@ -7,6 +7,48 @@
   <title>Pulse - Events</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <style>
+    /* ── Modal ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff;
+      color: #111;
+      border-radius: 18px;
+      padding: 28px 28px 22px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: #555;
+      line-height: 1;
+    }
+    .modal-close:hover { color: #111; }
+    .modal h2 { margin: 0 0 10px; font-size: 1.2rem; }
+    .modal-meta { font-size: 0.88rem; color: #555; margin-bottom: 16px; }
+    .modal-meta p { margin: 4px 0; }
+    .modal-desc { font-size: 0.9rem; color: #333; line-height: 1.55; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  </style>
 </head>
 
 <body>
@@ -17,10 +59,9 @@
     </header>
     <section class="card">
       <h2>Explore Events and Concerts</h2>
-      <!-- Concert Map Button -->
       <a class="btn btn-primary w-full" href="{{ url_for('concert_map') }}">Concert Map</a>
       <div class="list" style="margin-top: 8px;">
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+
         <div class="event-card">
           <img src="{{ url_for('static', filename='images/placeholder_caser.png') }}" alt="Event 1" class="event-pic">
           <h3>Daniel Ceasar Concert</h3>
@@ -29,12 +70,15 @@
             <p>Location: So-Fi Stadium</p>
           </div>
           <p class="event-description">Come experience Daniel Ceasar's newest album LIVE at SoFi Stadium</p>
-          <button class="btn btn-primary w-full"
-            onclick="openModal('Daniel Ceasar Concert', 'So-Fi Stadium', '11/23/2025')">
+          <button class="btn btn-primary w-full view-details-btn"
+            data-title="Daniel Ceasar Concert"
+            data-location="So-Fi Stadium"
+            data-date="11/23/2025"
+            data-desc="Come experience Daniel Ceasar's newest album LIVE at SoFi Stadium. A night of R&B, neo-soul, and unforgettable performances.">
             View Details
           </button>
         </div>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+
         <div class="event-card">
           <img src="{{ url_for('static', filename='images/placeholder_flawed.jpg') }}" alt="Event 2" class="event-pic">
           <h3>Flawed Mangoes Debut Show</h3>
@@ -43,24 +87,77 @@
             <p>Location: EchoPlex</p>
           </div>
           <p class="event-description">Up and comer artist Flawed Mangoes has his first live show at Echo Plex</p>
-          <a class="btn btn-primary w-full">View Details</a>
+          <button class="btn btn-primary w-full view-details-btn"
+            data-title="Flawed Mangoes Debut Show"
+            data-location="EchoPlex"
+            data-date="9/28/2025"
+            data-desc="Up and comer artist Flawed Mangoes makes his live debut at Echo Plex. Intimate venue, raw energy, and brand new tracks.">
+            View Details
+          </button>
         </div>
-        <!-- ========== PLACEHOLDER DATA - REMOVE BEFORE PRODUCTION ========== -->
+
         <div class="event-card">
           <img src="{{ url_for('static', filename='images/placeholder_benson.jpg') }}" alt="Event 3" class="event-pic">
           <h3>Benson Boone World Tour</h3>
           <div class="event-date-location">
             <p>Date: 12/25/2025</p>
-            <p>Location: Youtube Stadium</p>
+            <p>Location: YouTube Theater</p>
           </div>
-          <p class="event-description">Benson Boone makes his long awaited return to LA for his world tour. </p>
-          <a class="btn btn-primary w-full">View Details</a>
+          <p class="event-description">Benson Boone makes his long awaited return to LA for his world tour.</p>
+          <button class="btn btn-primary w-full view-details-btn"
+            data-title="Benson Boone World Tour"
+            data-location="YouTube Theater"
+            data-date="12/25/2025"
+            data-desc="Benson Boone makes his long awaited return to LA as part of his global world tour. Expect fan favorites and new material.">
+            View Details
+          </button>
         </div>
-        <!-- ================================================================== -->
+
       </div>
       <p><a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a></p>
     </section>
   </main>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+      <h2 id="modalTitle"></h2>
+      <div class="modal-meta">
+        <p id="modalDate"></p>
+        <p id="modalLocation"></p>
+      </div>
+      <p class="modal-desc" id="modalDesc"></p>
+      <div class="modal-actions">
+        <a class="btn btn-primary" href="{{ url_for('concert_map') }}">Find on Map</a>
+        <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.view-details-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.getElementById('modalTitle').textContent = btn.dataset.title;
+        document.getElementById('modalDate').textContent = 'Date: ' + btn.dataset.date;
+        document.getElementById('modalLocation').textContent = 'Location: ' + btn.dataset.location;
+        document.getElementById('modalDesc').textContent = btn.dataset.desc || '';
+        document.getElementById('modalBackdrop').classList.add('open');
+      });
+    });
+
+    function closeModal() {
+      document.getElementById('modalBackdrop').classList.remove('open');
+    }
+
+    document.getElementById('modalBackdrop').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
 </body>
 
 </html>

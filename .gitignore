@@ -1,6 +1,8 @@
 /supabase/
 /scripts/
 .claude/
+/.claude
+/.claude/
 
 .vscode/
 node_modules/
