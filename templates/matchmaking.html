@@ -182,10 +182,16 @@
   <script src="{{ url_for('static', filename='js/similarity.js') }}"></script>
   <script>
   (function () {
+    var CURRENT_USER_ID = String(document.body.getAttribute("data-user-id") || "");
+
     // ── Helpers ──────────────────────────────────────────────
     function esc(s) {
       return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;")
         .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+    }
+
+    function isCurrentUser(u) {
+      return CURRENT_USER_ID && String(u.id) === CURRENT_USER_ID;
     }
     function initials(name) {
       const p = (name||"").trim().split(/\s+/).filter(Boolean);
@@ -288,9 +294,10 @@
 
     function renderSuggestedList(users) {
       const selectedGenre = genreFilter.value;
+      const filtered = users.filter(function (u) { return !isCurrentUser(u); });
       const visible = selectedGenre
-        ? users.filter(function (u) { return genresForUser(u).includes(selectedGenre); })
-        : users;
+        ? filtered.filter(function (u) { return genresForUser(u).includes(selectedGenre); })
+        : filtered;
 
       suggestedList.querySelectorAll(".suggested-card, .suggested-empty").forEach(function (n) { n.remove(); });
       suggestedCount.textContent = `${visible.length} ${visible.length === 1 ? "match" : "matches"}`;
@@ -417,9 +424,10 @@
           const res = await fetch("/search_users?q=" + encodeURIComponent(q));
           const data = await res.json();
           searchResults.innerHTML = "";
-          if (!data.users || !data.users.length) { searchEmpty.hidden = false; return; }
+          const users = (data.users || []).filter(function (u) { return !isCurrentUser(u); });
+          if (!users.length) { searchEmpty.hidden = false; return; }
           searchEmpty.hidden = true;
-          data.users.forEach(renderSearchResult);
+          users.forEach(renderSearchResult);
         } catch (_) { searchEmpty.hidden = false; }
       }, 200);
     });

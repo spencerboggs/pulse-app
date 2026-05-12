@@ -131,6 +131,76 @@
     .toast.success { background: #e6f7ec; color: #0f5132; border: 1px solid #b7e4c5; }
     .toast.error   { background: #fdecee; color: #842029; border: 1px solid #f3c2c8; }
     .muted { color: #888; font-size: 12px; }
+
+    /* ====== Friends list ====== */
+    .friends-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .friend-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 8px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      text-decoration: none;
+      transition: border-color 0.15s, transform 0.15s;
+      cursor: pointer;
+    }
+    .friend-tile:hover {
+      border-color: rgba(255,150,29,0.45);
+      transform: translateY(-2px);
+    }
+    .friend-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,150,29,0.35);
+      background: rgba(255,150,29,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent, #FF961D);
+      flex-shrink: 0;
+    }
+    .friend-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .friend-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      color: inherit;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .friend-handle {
+      font-size: 0.72rem;
+      opacity: 0.5;
+      text-align: center;
+    }
+    .friends-empty {
+      font-size: 0.88rem;
+      opacity: 0.55;
+      padding: 4px 0;
+    }
+    .friends-loading {
+      font-size: 0.88rem;
+      opacity: 0.5;
+    }
   </style>
 </head>
 
@@ -209,6 +279,14 @@
       <div class="toast success" id="toast-success">Spotify connected.</div>
       <div class="toast error"   id="toast-error">Something went wrong.</div>
       <!-- ======================================== -->
+
+      <!-- ========== FRIENDS LIST ========== -->
+      <div class="profile-section" id="friends-section">
+        <h3>friends</h3>
+        <p class="friends-loading" id="friends-loading">Loading…</p>
+        <div class="friends-grid" id="friends-grid" hidden></div>
+        <p class="friends-empty" id="friends-empty" hidden>No friends yet — find people in <a href="{{ url_for('matchmaking') }}">Matchmaking</a>.</p>
+      </div>
 
       <p style="margin-top: 16px;">
         <a class="btn btn-ghost" href="{{ url_for('home') }}">Back to Home</a>
@@ -387,6 +465,39 @@
       }
 
       loadStatus();
+
+      // ---- Friends list ----
+      async function loadFriends() {
+        const loadingEl = document.getElementById('friends-loading');
+        const gridEl    = document.getElementById('friends-grid');
+        const emptyEl   = document.getElementById('friends-empty');
+        try {
+          const res  = await fetch('/friends/list', { credentials: 'same-origin' });
+          const data = await res.json();
+          const friends = data.friends || [];
+          loadingEl.hidden = true;
+          if (!friends.length) {
+            emptyEl.hidden = false;
+            return;
+          }
+          gridEl.hidden = false;
+          friends.forEach(function (f) {
+            const username = f.username || '';
+            const initials = username.slice(0, 2).toUpperCase() || '?';
+            const tile = document.createElement('a');
+            tile.className = 'friend-tile';
+            tile.href = '/u/' + encodeURIComponent(username);
+            tile.innerHTML =
+              '<div class="friend-avatar">' + initials + '</div>' +
+              '<span class="friend-name">' + username + '</span>' +
+              '<span class="friend-handle">@' + username + '</span>';
+            gridEl.appendChild(tile);
+          });
+        } catch (_) {
+          loadingEl.textContent = 'Could not load friends.';
+        }
+      }
+      loadFriends();
     </script>
   </main>
 </body>

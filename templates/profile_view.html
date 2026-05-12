@@ -329,18 +329,36 @@
         } else {
           document.getElementById("spotifyContent").hidden = false;
 
-          // Artists
+          // Artists (top 5)
           var grid = document.getElementById("artistGrid");
-          var artists = data.top_artists || [];
+          var artists = (data.top_artists || []).slice(0, 5);
           if (artists.length) {
             artists.forEach(function (a) {
               var tile = document.createElement("div");
               tile.className = "artist-tile";
-              var imgHtml = a.image
-                ? '<img class="artist-img" src="' + esc(a.image) + '" alt="' + esc(a.name) + '" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">'
-                  + '<div class="artist-img-placeholder" style="display:none;">🎤</div>'
-                : '<div class="artist-img-placeholder">🎤</div>';
-              tile.innerHTML = imgHtml + '<span class="artist-name">' + esc(a.name) + '</span>';
+
+              var initial = (a.name || "?")[0].toUpperCase();
+              var placeholder = document.createElement("div");
+              placeholder.className = "artist-img-placeholder";
+              placeholder.textContent = initial;
+
+              if (a.image) {
+                var img = document.createElement("img");
+                img.className = "artist-img";
+                img.alt = a.name || "";
+                img.src = a.image;
+                img.addEventListener("error", function () {
+                  img.replaceWith(placeholder);
+                });
+                tile.appendChild(img);
+              } else {
+                tile.appendChild(placeholder);
+              }
+
+              var nameEl = document.createElement("span");
+              nameEl.className = "artist-name";
+              nameEl.textContent = a.name || "";
+              tile.appendChild(nameEl);
               grid.appendChild(tile);
             });
           } else {

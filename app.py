@@ -979,24 +979,56 @@ def create_app() -> Flask:
         if not res.data:
             return jsonify({"error": "User not found"}), 404
         user = res.data[0]
-        user_id = str(user["id"])
+        user_id_int = int(user["id"])
+        user_id_str = str(user_id_int)
 
-        stats = fetch_user_statistics(user_id)
+        # user_statistics stores user_id as integer — pass int to avoid type mismatch.
+        stats = None
+        try:
+            r = supabase.table(USER_STATISTICS_TABLE).select("*").eq("user_id", user_id_int).limit(1).execute()
+            stats = r.data[0] if r.data else None
+        except Exception:
+            pass
+
         spotify_blob = (stats or {}).get("spotify") or {}
         taste = taste_profile_from_row(stats)
 
-        artists_res = supabase.table("user_top_artists").select("name, image").eq("user_id", user_id).limit(20).execute()
-        top_artists = artists_res.data or []
+        # user_top_artists may store user_id as string or int depending on how the
+        # session value was written; try both to guarantee a result.
+        top_artists_db = []
+        try:
+            r = supabase.table("user_top_artists").select("name, image").eq("user_id", user_id_str).limit(5).execute()
+            top_artists_db = r.data or []
+        except Exception:
+            pass
+        if not top_artists_db:
+            try:
+                r = supabase.table("user_top_artists").select("name, image").eq("user_id", user_id_int).limit(5).execute()
+                top_artists_db = r.data or []
+            except Exception:
+                pass
 
-        insights_res = supabase.table("followed_insights").select("item_id, title, badges").eq("user_id", user_id).execute()
+        # Fall back to name-only list when user_top_artists is empty.
+        if top_artists_db:
+            top_artists = top_artists_db
+        else:
+            artist_names = spotify_blob.get("topArtists") or taste.get("topArtists") or []
+            top_artists = [{"name": n, "image": None} for n in artist_names[:5]]
+
+        insights_res = supabase.table("followed_insights").select("item_id, title, badges").eq("user_id", user_id_str).execute()
         followed_insights = insights_res.data or []
 
         top_tracks = spotify_blob.get("topTracks") or taste.get("topTracks") or []
-        top_genres = taste.get("topGenres") or spotify_blob.get("topGenres") or []
-        has_spotify = bool(top_artists or spotify_blob.get("topArtists"))
+        # Collect genres from all sources and deduplicate.
+        genre_set = list(dict.fromkeys(
+            (taste.get("topGenres") or []) + (spotify_blob.get("topGenres") or [])
+        ))
+        top_genres = genre_set
+
+        has_music_data = bool(top_artists or top_genres or top_tracks)
 
         return jsonify({
-            "has_spotify": has_spotify,
+            "has_spotify": has_music_data,
             "top_artists": top_artists,
             "top_tracks": top_tracks[:10],
             "top_genres": top_genres[:8],
